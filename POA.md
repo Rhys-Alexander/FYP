@@ -54,6 +54,15 @@ model the architecture to use 3d
   - Use data augmentation techniques (rotation, scaling, flipping) tailored for medical images.
   - Employ a validation set to monitor for overfitting and adjust learning rates (e.g., using learning rate schedulers).
 
+For your specific task (AD vs. CN classification with 3D MRI):
+
+MedicalNet's ResNet-50 likely offers the best balance of performance, ease of use, and transfer learning potential. The weights are pretrained on a large 3D medical dataset which should transfer well to your brain MRI task.
+nnU-Net would likely give the highest performance but requires more setup.
+MONAI's UNETR or SwinUNETR pretrained on BraTS would be good if you want to leverage transformer architectures.
+
+3D ResNet-18 or ResNet-34 with MedicalNet pretrained weights
+or 3d VIT
+
 ### Experiments, Evaluation, and Validation
 
 **Milestones:**
@@ -77,31 +86,6 @@ model the architecture to use 3d
   - Use matplotlib or seaborn for plotting and visualizing results.
 
 # **Plan of Action for Next Work Day (Focused on Coding the AI)**
-
-## **1. Setup & Preprocessing Pipeline (2-3 hours)**
-
-**Objective:** Ensure the dataset is properly preprocessed and ready for model training.
-
-### **Tasks:**
-
-✅ **Dataset Preparation**
-
-- Download a subset of the **ADNI** or **OASIS-3** dataset (or use preprocessed versions).
-- Load fMRI scans using `NiBabel` and `nilearn`.
-- Convert 3D fMRI scans into 2D slices or projections (mean/max intensity projections, axial/coronal slices).
-
-✅ **Preprocessing Steps**
-
-- Normalize intensity values.
-- Apply skull stripping and motion correction (if necessary).
-- Implement basic **data augmentation** (flipping, rotation, intensity shifts).
-
-✅ **Code Deliverables:**
-
-- A script (`preprocess.py`) to load, normalize, and convert fMRI scans into a format usable for a CNN.
-- A function to visualize preprocessed slices to verify correctness.
-
----
 
 ## **2. Model Adaptation & Implementation (3-4 hours)**
 
