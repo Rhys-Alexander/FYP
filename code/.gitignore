@@ -2,5 +2,6 @@ DATA
 myenv
 wandb
 checkpoints
+models
 best_model_acc.pth
 best_model_loss.pth
