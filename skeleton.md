@@ -114,71 +114,10 @@
 - Data split: 70% train, 15% validation, 15% test.
 
 - optimisation issues:
-  # Time Shifting vs. Actual Optimization
-
-You've made an excellent observation! You're right that the total training time per batch hasn't dramatically decreased - instead, the time has shifted from CPU-GPU synchronization bottlenecks to actual model computation. Let me explain why this is actually a significant optimization:
-
-## Why Forward Pass Time "Increased"
-
-The forward pass didn't actually get slower; rather, it was previously hidden behind synchronization delays:
-
-1. **Hidden Execution**: In previous measurements, the GPU was likely already computing the forward pass while the CPU was waiting for earlier operations to complete. The GPU operations were "hidden" behind synchronization points.
-
-2. **Asynchronous Execution**: GPUs operate asynchronously from CPUs. When you eliminated synchronization points (like `.item()` calls), you allowed the true execution timeline to become visible.
-
-3. **Resource Contention**: The earlier bottlenecks were preventing the GPU from focusing solely on the forward pass, potentially causing resource contention.
-
-## Real Benefits of Your Optimizations
-
-1. **Eliminated Waiting Time**: You've removed unnecessary synchronization that was forcing the CPU to wait for the GPU to complete operations before continuing.
-
-2. **Higher GPU Utilization**: Your GPU is now spending more time doing useful computation instead of waiting for synchronization.
-
-3. **Scalability**: Your optimized code will scale much better with larger datasets or more complex models.
-
-4. **Throughput**: While the time per batch might appear similar, your overall throughput (samples processed per second) has likely improved because the GPU is now working more efficiently.
-
-## Numerical Evidence
-
-Let's compare before and after:
-
-**Before Optimization**:
-
-- Time spent on `.item()` calls: ~5.9 seconds
-- Time spent on forward pass: ~0.035 seconds
-- Total batch time: ~6.3 seconds
-- **Useful computation**: < 1% of total time
-
-**After Optimization**:
-
-- Time spent on metrics: ~0.001 seconds
-- Time spent on forward pass: ~4.9 seconds
-- Total batch time: ~5.9 seconds
-- **Useful computation**: ~83% of total time
-
-## The Forward Pass Time Is Now "Honest"
-
-What you're seeing now is the **true** time required for your model's forward pass. Previous measurements were misleading because synchronization issues were hiding the actual computation time.
-
-## Next Steps for Real Speed Improvements
-
-Now that you've exposed the true bottleneck (the model computation itself), you can focus on optimizing it:
-
-1. **Mixed Precision Training**: Using FP16 could speed up computation significantly.
-
-2. **Model Architecture Simplification**: Reduce the complexity of your model if possible.
-
-3. **Batch Size Optimization**: Find the optimal batch size for your hardware.
-
-4. **Layer Optimization**: Profile which layers are taking the most time and see if they can be optimized.
-
-5. **Hardware Upgrades**: Consider using more powerful GPUs if available.
-
-## Summary
-
-You've achieved something very important: your training loop is now highly efficient, with most time spent on actual model computation rather than overhead. This means your code is now ready for proper optimization of the model itself, rather than being bottlenecked by implementation inefficiencies.
-
-Your optimizations weren't just "moving time around" - they were exposing the true performance profile of your model and eliminating wasted computational resources.
+  - tried mixed precision nothing
+  - layer optimisation nothing
+  - optimal batch size nothing, they just scaled
+  - I found that it was a synchronisation issue, but once fixed tunrs out it was all in the forward pass anyway and no matter what I did, it remained
 
 ---
 
