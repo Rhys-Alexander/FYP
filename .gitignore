@@ -1,2 +1,12 @@
+.gitignore
 /.DS_Store
-code/.DS_Store
+.DS_Store
+latex_report/main.aux
+latex_report/main.fdb_latexmk
+latex_report/main.bbl
+latex_report/main.blg
+latex_report/main.fls
+latex_report/main.log
+latex_report/main.out
+latex_report/main.synctex.gz
+latex_report/main.toc
