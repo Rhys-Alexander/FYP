@@ -433,124 +433,263 @@ def display_model_summary(model, input_size=(1, 1, 128, 128, 128), detailed=True
     return summary
 
 
-def train_one_epoch(model, dataloader, criterion, optimizer, device, epoch):
-    """
-    Train model for one epoch with optimized PyTorch practices.
+class TrainerEngine:
+    """Handles training, validation, and testing workflows."""
 
-    Args:
-        model: PyTorch model to train
-        dataloader: Training data loader
-        criterion: Loss function
-        optimizer: Optimizer
-        device: Computation device (CPU/GPU/MPS)
-        epoch: Current epoch number
+    def __init__(self, model, criterion, optimizer, scheduler, device):
+        """
+        Initialize the trainer with model and training components.
 
-    Returns:
-        tuple: (epoch_loss, epoch_accuracy)
-    """
+        Args:
+            model: The PyTorch model to train
+            criterion: Loss function
+            optimizer: Optimizer for training
+            scheduler: Learning rate scheduler
+            device: Computation device (CPU/GPU/MPS)
+        """
+        self.model = model
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.scheduler = scheduler
+        self.device = device
+        self.best_val_acc = 0.0
+        self.best_val_loss = float("inf")
 
-    model.train()
+    def train_one_epoch(self, dataloader, epoch):
+        """
+        Train model for one epoch with optimized PyTorch practices.
 
-    running_loss = 0.0
-    running_corrects = 0
+        Args:
+            dataloader: Training data loader
+            epoch: Current epoch number
 
-    for inputs, labels in tqdm(dataloader, desc=f"Training Epoch {epoch+1}"):
-        # Move data to device with non_blocking for potential performance gain
-        inputs = inputs.to(device)
-        labels = labels.to(device)
+        Returns:
+            tuple: (epoch_loss, epoch_accuracy)
+        """
+        self.model.train()
 
-        # Zero gradients
-        optimizer.zero_grad(set_to_none=True)
+        running_loss = 0.0
+        running_corrects = 0
 
-        # Forward pass
-        outputs = model(inputs)
-        _, preds = torch.max(outputs.data, 1)
-        loss = criterion(outputs, labels)
+        for inputs, labels in tqdm(dataloader, desc=f"Training Epoch {epoch+1}"):
+            # Move data to device with non_blocking for potential performance gain
+            inputs = inputs.to(self.device)
+            labels = labels.to(self.device)
 
-        # Backward pass
-        loss.backward()
-        optimizer.step()
+            # Zero gradients
+            self.optimizer.zero_grad(set_to_none=True)
 
-        running_loss += loss.item() * inputs.size(0)
-        running_corrects += torch.sum(preds == labels.data)
+            # Forward pass
+            outputs = self.model(inputs)
+            _, preds = torch.max(outputs.data, 1)
+            loss = self.criterion(outputs, labels)
 
-    epoch_loss = running_loss / len(dataloader.dataset)
-    epoch_acc = 100 * running_corrects / len(dataloader.dataset)
+            # Backward pass
+            loss.backward()
+            self.optimizer.step()
 
-    # Log epoch-level metrics
-    wandb.log(
-        {
-            "train_loss": epoch_loss,
-            "train_acc": epoch_acc,
-            "epoch": epoch,
-        }
-    )
-
-    if device.type == "mps":
-        empty_cache()
-
-    return epoch_loss, epoch_acc
-
-
-def validate(model, dataloader, criterion, device, epoch):
-    """
-    Validate the model and return performance metrics.
-
-    Args:
-        model: The PyTorch model to validate
-        dataloader: DataLoader containing validation data
-        criterion: Loss function
-        device: Device to run validation on (cuda/cpu)
-        epoch: Current training epoch
-
-    Returns:
-        Tuple of (validation loss, validation accuracy, metrics dictionary)
-    """
-    model.eval()
-    running_loss = 0.0
-    all_labels = []
-    all_preds = []
-    all_probs = []
-
-    if dataloader.dataset.split == "val":
-        prefix = "val"
-        desc = f"Validation Epoch {epoch+1}"
-    else:
-        prefix = "test"
-        epoch = None
-        desc = "Testing"
-
-    # Collect predictions
-    with torch.no_grad():
-        for inputs, labels in tqdm(dataloader, desc=desc):
-            inputs, labels = inputs.to(device), labels.to(device)
-
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
             running_loss += loss.item() * inputs.size(0)
+            running_corrects += torch.sum(preds == labels.data)
 
-            probs = torch.nn.functional.softmax(outputs, dim=1)
-            _, predicted = torch.max(outputs.data, 1)
+        epoch_loss = running_loss / len(dataloader.dataset)
+        epoch_acc = 100 * running_corrects / len(dataloader.dataset)
 
-            all_labels.extend(labels.cpu().numpy())
-            all_preds.extend(predicted.cpu().numpy())
-            all_probs.extend(probs[:, 1].cpu().numpy())
+        # Log epoch-level metrics
+        wandb.log(
+            {
+                "train_loss": epoch_loss,
+                "train_acc": epoch_acc,
+                "epoch": epoch,
+            }
+        )
 
-    # Convert to numpy arrays
-    all_labels = np.array(all_labels)
-    all_preds = np.array(all_preds)
-    all_probs = np.array(all_probs)
+        if self.device.type == "mps":
+            empty_cache()
 
-    # Calculate metrics
-    loss = running_loss / len(dataloader.dataset)
-    metrics = compute_metrics(all_labels, all_preds, all_probs)
-    acc = metrics["accuracy"] * 100  # Convert to percentage
+        return epoch_loss, epoch_acc
 
-    log_to_wandb_dashboard(
-        all_labels, all_preds, all_probs, loss, metrics, epoch, prefix=prefix
-    )
+    def validate(self, dataloader, epoch=None):
+        """
+        Validate the model and return performance metrics.
 
-    return loss, acc
+        Args:
+            dataloader: DataLoader containing validation data
+            epoch: Current training epoch (None for test mode)
+
+        Returns:
+            Tuple of (validation loss, validation accuracy)
+        """
+        self.model.eval()
+        running_loss = 0.0
+        all_labels = []
+        all_preds = []
+        all_probs = []
+
+        if dataloader.dataset.split == "val":
+            prefix = "val"
+            desc = f"Validation Epoch {epoch+1}" if epoch is not None else "Validation"
+        else:
+            prefix = "test"
+            desc = "Testing"
+
+        # Collect predictions
+        with torch.no_grad():
+            for inputs, labels in tqdm(dataloader, desc=desc):
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
+
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, labels)
+                running_loss += loss.item() * inputs.size(0)
+
+                probs = torch.nn.functional.softmax(outputs, dim=1)
+                _, predicted = torch.max(outputs.data, 1)
+
+                all_labels.extend(labels.cpu().numpy())
+                all_preds.extend(predicted.cpu().numpy())
+                all_probs.extend(probs[:, 1].cpu().numpy())
+
+        # Convert to numpy arrays
+        all_labels = np.array(all_labels)
+        all_preds = np.array(all_preds)
+        all_probs = np.array(all_probs)
+
+        # Calculate metrics
+        loss = running_loss / len(dataloader.dataset)
+        metrics = compute_metrics(all_labels, all_preds, all_probs)
+        acc = metrics["accuracy"] * 100  # Convert to percentage
+
+        log_to_wandb_dashboard(
+            all_labels, all_preds, all_probs, loss, metrics, epoch, prefix=prefix
+        )
+
+        return loss, acc
+
+    def train(
+        self,
+        train_loader,
+        val_loader,
+        num_epochs,
+        start_epoch=0,
+        patience=5,
+        checkpoint_path="checkpoints/checkpoint.pth",
+    ):
+        """
+        Execute the training loop with validation and early stopping.
+
+        Args:
+            train_loader: DataLoader for training data
+            val_loader: DataLoader for validation data
+            num_epochs: Total number of epochs to train
+            start_epoch: Starting epoch (for resuming training)
+            patience: Number of epochs to wait for improvement before early stopping
+            checkpoint_path: Path to save checkpoints
+
+        Returns:
+            tuple: (epochs_trained, best_validation_accuracy, best_validation_loss)
+        """
+        early_stopping_counter = 0
+
+        for epoch in range(start_epoch, num_epochs):
+            print(f"\nEpoch {epoch+1}/{num_epochs}")
+
+            # Train
+            train_loss, train_acc = self.train_one_epoch(train_loader, epoch)
+
+            # Validate
+            val_loss, val_acc = self.validate(val_loader, epoch)
+
+            # Update learning rate
+            self.scheduler.step()
+            current_lr = self.scheduler.get_last_lr()[0]
+            print(f"Current learning rate: {current_lr:.6f}")
+
+            print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
+            print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%")
+
+            # Save best model by accuracy
+            if val_acc > self.best_val_acc:
+                self.best_val_acc = val_acc
+                save_checkpoint(
+                    self.model,
+                    self.optimizer,
+                    self.scheduler,
+                    epoch,
+                    val_acc,
+                    val_loss,
+                    self.best_val_acc,
+                    self.best_val_loss,
+                    "best_model_acc.pth",
+                    is_best=True,
+                    metric_type="acc",
+                )
+                early_stopping_counter = 0
+
+            # Save best model by loss
+            if val_loss < self.best_val_loss:
+                self.best_val_loss = val_loss
+                save_checkpoint(
+                    self.model,
+                    self.optimizer,
+                    self.scheduler,
+                    epoch,
+                    val_acc,
+                    val_loss,
+                    self.best_val_acc,
+                    self.best_val_loss,
+                    "best_model_loss.pth",
+                    is_best=True,
+                    metric_type="loss",
+                )
+                early_stopping_counter = 0
+            else:
+                early_stopping_counter += 1
+
+            # Check for early stopping
+            if early_stopping_counter >= patience:
+                print(f"Early stopping after {epoch+1} epochs without improvement.")
+                break
+
+            # Save regular checkpoint
+            save_checkpoint(
+                self.model,
+                self.optimizer,
+                self.scheduler,
+                epoch,
+                val_acc,
+                val_loss,
+                self.best_val_acc,
+                self.best_val_loss,
+                checkpoint_path,
+            )
+
+        return epoch + 1, self.best_val_acc, self.best_val_loss
+
+    def evaluate_final_model(
+        self, test_loader, best_model_path="best_model_acc.pth", num_epochs=None
+    ):
+        """
+        Evaluate the best model on the test set.
+
+        Args:
+            test_loader: DataLoader for test data
+            best_model_path: Path to the best model checkpoint
+            num_epochs: Total epochs trained (for logging)
+
+        Returns:
+            tuple: (test_loss, test_accuracy)
+        """
+        # Load best model
+        checkpoint = torch.load(best_model_path)
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        print(
+            f"Loaded best model from epoch {checkpoint['epoch']+1} with accuracy {checkpoint['val_acc']:.2f}%"
+        )
+
+        # Evaluate on test set
+        final_test_loss, final_test_acc = self.validate(test_loader, num_epochs)
+        print(f"Final test accuracy: {final_test_acc:.2f}%")
+
+        return final_test_loss, final_test_acc
 
 
 def compute_metrics(labels, preds, probs):
@@ -659,24 +798,6 @@ def log_to_wandb_dashboard(labels, preds, probs, loss, metrics, epoch, prefix="v
     wandb.log(log_dict)
 
 
-def evaluate_final_model(model, test_loader, criterion, device, num_epochs):
-    """Evaluate the best model on the test set."""
-    # Load best model
-    checkpoint = torch.load("best_model_acc.pth")
-    model.load_state_dict(checkpoint["model_state_dict"])
-    print(
-        f"Loaded best model from epoch {checkpoint['epoch']+1} with accuracy {checkpoint['val_acc']:.2f}%"
-    )
-
-    # Evaluate on test set
-    final_test_loss, final_test_acc = validate(
-        model, test_loader, criterion, device, num_epochs
-    )
-    print(f"Final test accuracy: {final_test_acc:.2f}%")
-
-    return final_test_loss, final_test_acc
-
-
 def setup_wandb(config):
     """Initialize and configure Weights & Biases."""
     wandb.init(
@@ -780,169 +901,6 @@ def save_checkpoint(
             print("Continuing training without W&B artifact logging...")
 
 
-def train_model(
-    model,
-    train_loader,
-    val_loader,
-    criterion,
-    optimizer,
-    scheduler,
-    device,
-    num_epochs,
-    start_epoch,
-    patience,
-    checkpoint_path,
-):
-    """Execute the training loop with validation and early stopping."""
-    best_val_acc = 0.0
-    best_val_loss = float("inf")
-    early_stopping_counter = 0
-
-    for epoch in range(start_epoch, num_epochs):
-        print(f"\nEpoch {epoch+1}/{num_epochs}")
-
-        # Train
-        train_loss, train_acc = train_one_epoch(
-            model, train_loader, criterion, optimizer, device, epoch
-        )
-
-        # Validate
-        val_loss, val_acc = validate(model, val_loader, criterion, device, epoch)
-
-        # Update learning rate
-        scheduler.step()
-        current_lr = scheduler.get_last_lr()[0]
-        print(f"Current learning rate: {current_lr:.6f}")
-
-        print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
-        print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%")
-
-        # Save best model by accuracy
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            save_checkpoint(
-                model,
-                optimizer,
-                scheduler,
-                epoch,
-                val_acc,
-                val_loss,
-                best_val_acc,
-                best_val_loss,
-                "best_model_acc.pth",
-                is_best=True,
-                metric_type="acc",
-            )
-            early_stopping_counter = 0
-
-        # Save best model by loss
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            save_checkpoint(
-                model,
-                optimizer,
-                scheduler,
-                epoch,
-                val_acc,
-                val_loss,
-                best_val_acc,
-                best_val_loss,
-                "best_model_loss.pth",
-                is_best=True,
-                metric_type="loss",
-            )
-            early_stopping_counter = 0
-        else:
-            early_stopping_counter += 1
-
-        # Check for early stopping
-        if early_stopping_counter >= patience:
-            print(f"Early stopping after {epoch+1} epochs without improvement.")
-            break
-
-        # Save regular checkpoint
-        save_checkpoint(
-            model,
-            optimizer,
-            scheduler,
-            epoch,
-            val_acc,
-            val_loss,
-            best_val_acc,
-            best_val_loss,
-            checkpoint_path,
-        )
-
-    return epoch + 1, best_val_acc, best_val_loss
-
-
-def validate_checkpoint(checkpoint_path, data_path, architecture, batch_size=2):
-    """
-    Run validation on a specific checkpoint.
-
-    Args:
-        checkpoint_path (str): Path to the model checkpoint
-        data_path (str): Path to the dataset
-        batch_size (int): Batch size for validation
-
-    Returns:
-        dict: Validation metrics
-    """
-    print(f"Validating checkpoint: {checkpoint_path}")
-
-    # Check if checkpoint exists
-    if not os.path.exists(checkpoint_path):
-        print(f"Error: Checkpoint not found at {checkpoint_path}")
-        return None
-
-    # Create validation dataset and loader
-    val_dataset = MRIDataset(data_path, split="val", apply_augmentation=False)
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=0,
-        pin_memory=True,
-    )
-
-    # Create model with same architecture as used during training
-    model = MRIModel(num_classes=2, freeze_layers=True, architecture=architecture)
-    model = model.to(device)
-
-    # Load checkpoint
-    try:
-        checkpoint = torch.load(checkpoint_path)
-        model.load_state_dict(checkpoint["model_state_dict"])
-        epoch = checkpoint["epoch"]
-        previous_val_acc = checkpoint.get("val_acc", "N/A")
-        print(
-            f"Loaded checkpoint from epoch {epoch+1} with previous validation accuracy: {previous_val_acc:.2f}%"
-        )
-    except Exception as e:
-        print(f"Error loading checkpoint: {e}")
-        return None
-
-    # Set up criterion (without class weights since we're just evaluating)
-    criterion = nn.CrossEntropyLoss()
-
-    # Run validation
-    model.eval()
-    val_loss, val_acc = validate(model, val_loader, criterion, device, epoch)
-
-    print(f"\nValidation Results:")
-    print(f"Validation Loss: {val_loss:.4f}")
-    print(f"Validation Accuracy: {val_acc:.2f}%")
-
-    # If MPS device, clear cache
-    if device.type == "mps":
-        try:
-            torch.mps.empty_cache()
-        except:
-            pass
-
-    return {"epoch": epoch + 1, "val_loss": val_loss, "val_acc": val_acc}
-
-
 def main(data_path):
     # Configuration
     config = {
@@ -999,37 +957,32 @@ def main(data_path):
         model, train_dataset, config.learning_rate, device
     )
 
+    # Create trainer engine
+    trainer = TrainerEngine(model, criterion, optimizer, scheduler, device)
+
     # Load checkpoint if exists
     checkpoint_path = "checkpoints/checkpoint.pth"
     start_epoch, best_val_acc, best_val_loss = load_checkpoint(
         model, optimizer, scheduler, checkpoint_path
     )
 
-    # Run to check validation pipeline changes
-    # validate_checkpoint(checkpoint_path, data_path, config.architecture, batch_size=config.batch_size)
-
-    # Train model
-    # epochs_trained, best_val_acc, best_val_loss = train_model(
-    #     model,
-    #     train_loader,
-    #     val_loader,
-    #     criterion,
-    #     optimizer,
-    #     scheduler,
-    #     device,
-    #     config.epochs,
-    #     start_epoch,
-    #     config.patience,
-    #     checkpoint_path,
-    # )
+    # Train model using the trainer
+    epochs_trained, best_val_acc, best_val_loss = trainer.train(
+        train_loader,
+        val_loader,
+        config.epochs,
+        start_epoch,
+        config.patience,
+        checkpoint_path,
+    )
 
     # Final evaluation on test set
-    evaluate_final_model(model, test_loader, criterion, device, config.epochs)
+    trainer.evaluate_final_model(test_loader, "best_model_acc.pth", config.epochs)
 
     # Log final metrics
     wandb.run.summary["best_val_acc"] = best_val_acc
     wandb.run.summary["best_val_loss"] = best_val_loss
-    # wandb.run.summary["total_epochs"] = epochs_trained
+    wandb.run.summary["total_epochs"] = epochs_trained
 
     # Close wandb run
     wandb.finish()
