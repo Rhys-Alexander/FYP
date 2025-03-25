@@ -513,10 +513,9 @@ class CheckpointManager:
         Returns:
             tuple: (start_epoch, best_val_acc, best_val_loss)
         """
-        checkpoint_path = os.path.join(self.checkpoint_dir, filepath)
+        checkpoint = self.get(filepath)
 
-        if os.path.exists(checkpoint_path):
-            checkpoint = torch.load(checkpoint_path)
+        if checkpoint:
             model.load_state_dict(checkpoint["model_state_dict"])
 
             if optimizer is not None:
@@ -535,6 +534,25 @@ class CheckpointManager:
             best_val_loss = float("inf")
 
         return start_epoch, best_val_acc, best_val_loss
+
+    def get(self, filepath):
+        """
+        Get checkpoint data without loading it into a model.
+
+        Args:
+            filepath: Path to the checkpoint file
+
+        Returns:
+            dict: The checkpoint dictionary or None if file doesn't exist
+        """
+        checkpoint_path = os.path.join(self.checkpoint_dir, filepath)
+
+        if os.path.exists(checkpoint_path):
+            checkpoint = torch.load(checkpoint_path)
+            return checkpoint
+        else:
+            print(f"Warning: Checkpoint file not found at {checkpoint_path}")
+            return None
 
 
 class TrainerEngine:
@@ -616,62 +634,6 @@ class TrainerEngine:
 
         return epoch_loss, epoch_acc
 
-    def validate(self, dataloader, epoch=None):
-        """
-        Validate the model and return performance metrics.
-
-        Args:
-            dataloader: DataLoader containing validation data
-            epoch: Current training epoch (None for test mode)
-
-        Returns:
-            Tuple of (validation loss, validation accuracy)
-        """
-        self.model.eval()
-        running_loss = 0.0
-        all_labels = []
-        all_preds = []
-        all_probs = []
-
-        if dataloader.dataset.split == "val":
-            prefix = "val"
-            desc = f"Validation Epoch {epoch+1}" if epoch is not None else "Validation"
-        else:
-            prefix = "test"
-            desc = "Testing"
-
-        # Collect predictions
-        with torch.no_grad():
-            for inputs, labels in tqdm(dataloader, desc=desc):
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-
-                outputs = self.model(inputs)
-                loss = self.criterion(outputs, labels)
-                running_loss += loss.item() * inputs.size(0)
-
-                probs = torch.nn.functional.softmax(outputs, dim=1)
-                _, predicted = torch.max(outputs.data, 1)
-
-                all_labels.extend(labels.cpu().numpy())
-                all_preds.extend(predicted.cpu().numpy())
-                all_probs.extend(probs[:, 1].cpu().numpy())
-
-        # Convert to numpy arrays
-        all_labels = np.array(all_labels)
-        all_preds = np.array(all_preds)
-        all_probs = np.array(all_probs)
-
-        # Calculate metrics
-        loss = running_loss / len(dataloader.dataset)
-        metrics = compute_metrics(all_labels, all_preds, all_probs)
-        acc = metrics["accuracy"] * 100  # Convert to percentage
-
-        log_to_wandb_dashboard(
-            all_labels, all_preds, all_probs, loss, metrics, epoch, prefix=prefix
-        )
-
-        return loss, acc
-
     def train(
         self,
         train_loader,
@@ -702,7 +664,7 @@ class TrainerEngine:
             train_loss, train_acc = self.train_one_epoch(train_loader, epoch)
 
             # Validate
-            val_loss, val_acc = self.validate(val_loader, epoch)
+            val_loss, val_acc = self.evaluate(val_loader, epoch)
 
             # Update learning rate
             self.scheduler.step()
@@ -770,38 +732,81 @@ class TrainerEngine:
 
         return epoch + 1, self.best_val_acc, self.best_val_loss
 
-    def evaluate_final_model(
-        self, test_loader, best_model_path="best_model_acc.pth", num_epochs=None
-    ):
+    def evaluate(self, dataloader, epoch=None, prefix=None, checkpoint_path=None):
         """
-        Evaluate the best model on the test set.
+        Generic model evaluation function that works for both validation and test sets.
 
         Args:
-            test_loader: DataLoader for test data
-            best_model_path: Path to the best model checkpoint
-            num_epochs: Total epochs trained (for logging)
+            dataloader: DataLoader containing evaluation data
+            epoch: Current training epoch (None for standalone evaluation)
+            prefix: Metric prefix for logging ('val' or 'test')
+            checkpoint_path: Optional path to load model checkpoint before evaluation
 
         Returns:
-            tuple: (test_loss, test_accuracy)
+            Tuple of (evaluation loss, evaluation accuracy)
         """
-        # Load best model
-        self.checkpoint_manager.load(self.model, filepath=best_model_path)
+        # Determine prefix from dataset if not explicitly provided
+        if prefix is None:
+            prefix = dataloader.dataset.split
 
-        # Get epoch info from the loaded model
-        checkpoint_path = os.path.join(
-            self.checkpoint_manager.checkpoint_dir, best_model_path
+        # Load checkpoint if specified
+        if checkpoint_path:
+            checkpoint = self.checkpoint_manager.get(checkpoint_path)
+            self.model.load_state_dict(checkpoint["model_state_dict"])
+            val_acc = checkpoint.get("val_acc", 0.0)
+            epoch = checkpoint.get("epoch", 0)
+            print(
+                f"Loaded checkpoint from epoch {epoch+1} with accuracy {val_acc:.2f}%"
+            )
+
+        # Set model to evaluation mode
+        self.model.eval()
+
+        # Collect predictions and calculate loss
+        running_loss = 0.0
+        all_labels = []
+        all_preds = []
+        all_probs = []
+
+        # Determine description for progress bar
+        desc = (
+            f"{prefix.capitalize()} Epoch {epoch+1}"
+            if epoch is not None
+            else f"{prefix.capitalize()}"
         )
-        checkpoint = torch.load(checkpoint_path)
 
-        print(
-            f"Loaded best model from epoch {checkpoint['epoch']+1} with accuracy {checkpoint['val_acc']:.2f}%"
+        # Collect predictions
+        with torch.no_grad():
+            for inputs, labels in tqdm(dataloader, desc=desc):
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
+
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, labels)
+                running_loss += loss.item() * inputs.size(0)
+
+                probs = torch.nn.functional.softmax(outputs, dim=1)
+                _, predicted = torch.max(outputs.data, 1)
+
+                all_labels.extend(labels.cpu().numpy())
+                all_preds.extend(predicted.cpu().numpy())
+                all_probs.extend(probs[:, 1].cpu().numpy())
+
+        # Convert to numpy arrays
+        all_labels = np.array(all_labels)
+        all_preds = np.array(all_preds)
+        all_probs = np.array(all_probs)
+
+        # Calculate metrics
+        loss = running_loss / len(dataloader.dataset)
+        metrics = compute_metrics(all_labels, all_preds, all_probs)
+        acc = metrics["accuracy"] * 100  # Convert to percentage
+
+        # Log to wandb
+        log_to_wandb_dashboard(
+            all_labels, all_preds, all_probs, loss, metrics, epoch, prefix=prefix
         )
 
-        # Evaluate on test set
-        final_test_loss, final_test_acc = self.validate(test_loader, num_epochs)
-        print(f"Final test accuracy: {final_test_acc:.2f}%")
-
-        return final_test_loss, final_test_acc
+        return loss, acc
 
 
 def compute_metrics(labels, preds, probs):
@@ -1037,7 +1042,12 @@ def main(data_path):
     )
 
     # Final evaluation on test set
-    trainer.evaluate_final_model(test_loader, "best_model_acc.pth", config.epochs)
+    trainer.evaluate(
+        test_loader,
+        epoch=config.epochs,
+        prefix="test",
+        checkpoint_path="best_model_acc.pth",
+    )
 
     # Log final metrics
     wandb.run.summary["best_val_acc"] = best_val_acc
