@@ -1074,5 +1074,5 @@ if __name__ == "__main__":
     if not os.path.exists("checkpoints"):
         os.makedirs("checkpoints")
 
-    data_path = "./data/adni-split-test"
+    data_path = "./data/adni-split"
     main(data_path)
