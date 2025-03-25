@@ -1,5 +1,4 @@
 .gitignore
-/.DS_Store
 .DS_Store
 latex_report/main.aux
 latex_report/main.fdb_latexmk
