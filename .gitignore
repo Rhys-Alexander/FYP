@@ -10,3 +10,8 @@ latex_report/main.log
 latex_report/main.out
 latex_report/main.synctex.gz
 latex_report/main.toc
+myenv
+wandb
+checkpoints
+models
+data
