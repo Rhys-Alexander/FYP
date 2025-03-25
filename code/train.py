@@ -28,56 +28,188 @@ from sklearn.metrics import (
 )
 from IPython.display import display
 
-device = (
-    torch.accelerator.current_accelerator().type
-    if torch.accelerator.is_available()
-    else "cpu"
-)
-print(f"Using {device} device")
 
-if device == "mps":
-    # Empty CUDA cache periodically during training to avoid memory fragmentation
+class DeviceManager:
+    """Centralized device management"""
+
+    @staticmethod
+    def get_device():
+        """Get the best available device."""
+        return (
+            torch.accelerator.current_accelerator().type
+            if torch.accelerator.is_available()
+            else "cpu"
+        )
+
+    @staticmethod
     def empty_cache():
+        """Empty the device cache based on device type."""
+        device = DeviceManager.get_device()
+        if device == "cuda":
+            torch.cuda.empty_cache()
+        elif device == "mps":
+            try:
+                torch.mps.empty_cache()
+            except:
+                print("MPS cache management not available")
+                pass
+
+    @staticmethod
+    def to_device(data, device=None, non_blocking=True):
+        """Move data to device with standardized approach"""
+        if device is None:
+            device = DeviceManager.get_device()
+
+        if isinstance(data, (list, tuple)):
+            return [DeviceManager.to_device(x, device, non_blocking) for x in data]
+
+        return data.to(device, non_blocking=non_blocking)
+
+
+class Config:
+    """Centralized configuration management"""
+
+    def __init__(self, **kwargs):
+        # Default configuration
+        self.architecture = "r3d_18"
+        self.dataset = "MRI-AD-CN"
+        self.epochs = 2
+        self.batch_size = 2
+        self.learning_rate = 0.0001
+        self.optimizer = "AdamW"
+        self.device = DeviceManager.get_device()
+        self.input_dimensions = "128x128x128"
+        self.freeze_layers = True
+        self.data_augmentation = True
+        self.patience = 5
+        self.target_size = (128, 128, 128)
+        self.checkpoint_dir = "checkpoints"
+
+        # Override defaults with provided arguments
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def update(self, **kwargs):
+        """Update configuration parameters"""
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
+
+    def to_dict(self):
+        """Convert config to dictionary for wandb"""
+        return {
+            k: v
+            for k, v in self.__dict__.items()
+            if not k.startswith("_") and not callable(v)
+        }
+
+
+class MetricsManager:
+    """Handles metric computation and logging across training/validation/test"""
+
+    @staticmethod
+    def compute_metrics(labels, preds, probs):
+        """Calculate and return all classification metrics"""
+        metrics = {
+            "accuracy": accuracy_score(labels, preds),
+            "balanced_accuracy": balanced_accuracy_score(labels, preds),
+        }
+
+        # Class-specific accuracy
+        for cls in np.unique(labels):
+            mask = labels == cls
+            if np.any(mask):
+                metrics[f"class_{cls}_acc"] = accuracy_score(labels[mask], preds[mask])
+            else:
+                metrics[f"class_{cls}_acc"] = 0
+
+        # Precision, recall, F1
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            labels, preds, average="binary", zero_division=0
+        )
+        metrics.update(
+            {
+                "precision": precision,
+                "recall": recall,
+                "f1_score": f1,
+            }
+        )
+
+        # Confusion matrix and derived metrics
+        cm = confusion_matrix(labels, preds, labels=[0, 1])
+        if cm.shape == (2, 2):
+            tn, fp, _, _ = cm.ravel()
+            metrics["specificity"] = tn / (tn + fp + 1e-10)
+
+        # ROC AUC and PR AUC (with error handling)
         try:
-            # For newer PyTorch versions with MPS cache management
-            torch.mps.empty_cache()
-        except:
-            print("MPS cache management not available")
-            pass  # Ignore if this function doesn't exist"
+            metrics["roc_auc"] = roc_auc_score(labels, probs)
+        except Exception:
+            metrics["roc_auc"] = 0
 
+        try:
+            metrics["avg_precision"] = average_precision_score(labels, probs)
+        except Exception:
+            metrics["avg_precision"] = 0
 
-def visualize_scans(dataset_path, split="train", num_samples=3):
-    """
-    Visualize the first few MRI scans from AD and CN directories.
+        return metrics
 
-    Args:
-        dataset_path (str): Path to the dataset directory.
-        split (str): Dataset split to visualize ('train', 'val', 'test').
-        num_samples (int): Number of samples to visualize from each class.
-    """
-    # Define directories for AD and CN
-    ad_dir = os.path.join(dataset_path, split, "AD")
-    cn_dir = os.path.join(dataset_path, split, "CN")
+    @staticmethod
+    def log_metrics(labels, preds, probs, loss, epoch=None, prefix="val"):
+        """Compute metrics and log to wandb with visualizations"""
+        metrics = MetricsManager.compute_metrics(labels, preds, probs)
 
-    # Get the first few files from each directory
-    ad_files = [
-        os.path.join(ad_dir, f) for f in os.listdir(ad_dir) if f.endswith(".nii.gz")
-    ][:num_samples]
-    cn_files = [
-        os.path.join(cn_dir, f) for f in os.listdir(cn_dir) if f.endswith(".nii.gz")
-    ][:num_samples]
+        log_dict = {
+            f"{prefix}_loss": loss,
+            f"{prefix}_acc": metrics["accuracy"] * 100,
+            f"{prefix}_balanced_acc": metrics["balanced_accuracy"] * 100,
+            f"{prefix}_CN_acc": metrics["class_0_acc"] * 100,
+            f"{prefix}_AD_acc": metrics["class_1_acc"] * 100,
+            f"{prefix}_precision": metrics["precision"],
+            f"{prefix}_recall": metrics["recall"],
+            f"{prefix}_specificity": metrics.get("specificity", 0),
+            f"{prefix}_f1": metrics["f1_score"],
+            f"{prefix}_roc_auc": metrics["roc_auc"],
+            f"{prefix}_avg_precision": metrics["avg_precision"],
+        }
 
-    # Plot the first few AD scans
-    print("AD Scans:")
-    for file in ad_files:
-        plotting.plot_anat(file, title=os.path.basename(file))
-    plotting.show()
+        if epoch is not None:
+            log_dict["epoch"] = epoch
 
-    # Plot the first few CN scans
-    print("CN Scans:")
-    for file in cn_files:
-        plotting.plot_anat(file, title=os.path.basename(file))
-    plotting.show()
+        # Create confusion matrix visualization
+        conf_matrix = wandb.plot.confusion_matrix(
+            preds=preds, y_true=labels, class_names=["CN", "AD"]
+        )
+        log_dict["confusion_matrix"] = conf_matrix
+
+        # ROC Curve
+        try:
+            roc_curve_plot = wandb.plot.roc_curve(
+                y_true=labels,
+                y_probas=np.stack([1 - probs, probs], axis=1),
+                labels=["CN", "AD"],
+                classes_to_plot=[1],
+            )
+            log_dict["roc_curve"] = roc_curve_plot
+        except Exception as e:
+            print(f"Error creating ROC curve: {e}")
+
+        # PR Curve
+        try:
+            precision_vals, recall_vals, _ = precision_recall_curve(labels, probs)
+            pr_data = [[x, y] for x, y in zip(recall_vals, precision_vals)]
+            pr_table = wandb.Table(data=pr_data, columns=["recall", "precision"])
+            pr_plot = wandb.plot.line(
+                pr_table, "recall", "precision", title="Precision-Recall Curve"
+            )
+            log_dict["pr_curve"] = pr_plot
+        except Exception as e:
+            print(f"Error creating PR curve: {e}")
+
+        # Log everything to W&B
+        wandb.log(log_dict)
+
+        return metrics
 
 
 class MRIDataset(Dataset):
@@ -118,20 +250,23 @@ class MRIDataset(Dataset):
 
     def _load_samples(self, ad_dir, cn_dir):
         """Load samples from AD and CN directories"""
-        # Load AD samples (label 1)
-        ad_files = [f for f in os.listdir(ad_dir) if f.endswith(".nii.gz")]
-        for file in ad_files:
-            self.samples.append(os.path.join(ad_dir, file))
-            self.labels.append(1)  # AD class
 
-        # Load CN samples (label 0)
-        cn_files = [f for f in os.listdir(cn_dir) if f.endswith(".nii.gz")]
-        for file in cn_files:
-            self.samples.append(os.path.join(cn_dir, file))
-            self.labels.append(0)  # CN class
+        # Generic function to load files from a directory with a specific label
+        def load_from_dir(directory, label):
+            files = [f for f in os.listdir(directory) if f.endswith(".nii.gz")]
+            for file in files:
+                self.samples.append(os.path.join(directory, file))
+                self.labels.append(label)
+            return len(files)
+
+        # Load samples from each class directory
+        ad_count = load_from_dir(ad_dir, 1)  # AD class
+        cn_count = load_from_dir(cn_dir, 0)  # CN class
 
         if len(self.samples) == 0:
             raise ValueError(f"No .nii.gz files found in {ad_dir} or {cn_dir}")
+
+        print(f"Loaded {ad_count} AD samples and {cn_count} CN samples")
 
     def _setup_transforms(self):
         if self.apply_augmentation:
@@ -206,14 +341,23 @@ class MRIDataset(Dataset):
             raise
 
 
-def create_datasets_and_loaders(data_root, batch_size, use_augmentation):
+def create_datasets_and_loaders(
+    data_root, batch_size, use_augmentation, target_size=(128, 128, 128)
+):
     """Create datasets and data loaders."""
     # Create datasets
     train_dataset = MRIDataset(
-        data_root, split="train", apply_augmentation=use_augmentation
+        data_root,
+        split="train",
+        apply_augmentation=use_augmentation,
+        target_size=target_size,
     )
-    val_dataset = MRIDataset(data_root, split="val", apply_augmentation=False)
-    test_dataset = MRIDataset(data_root, split="test", apply_augmentation=False)
+    val_dataset = MRIDataset(
+        data_root, split="val", apply_augmentation=False, target_size=target_size
+    )
+    test_dataset = MRIDataset(
+        data_root, split="test", apply_augmentation=False, target_size=target_size
+    )
 
     # Create dataloaders
     train_loader = DataLoader(
@@ -255,6 +399,74 @@ def create_datasets_and_loaders(data_root, batch_size, use_augmentation):
         test_loader,
         dataset_stats,
     )
+
+
+class ModelManager:
+    """Handles model initialization, architecture selection, and summary"""
+
+    @staticmethod
+    def create_model(config):
+        """Create and configure the model based on config"""
+        model = MRIModel(
+            num_classes=2,
+            freeze_layers=config.freeze_layers,
+            architecture=config.architecture,
+        )
+        model = DeviceManager.to_device(model, config.device)
+
+        # Get parameter statistics
+        trainable_params = model.count_trainable_params()
+        total_params = model.count_total_params()
+        frozen_params = total_params - trainable_params
+
+        model_stats = {
+            "total_params": total_params,
+            "trainable_params": trainable_params,
+            "frozen_params": frozen_params,
+            "frozen_percentage": frozen_params / total_params,
+        }
+
+        return model, model_stats
+
+    @staticmethod
+    def setup_training_components(model, train_dataset, config):
+        """Set up criterion, optimizer, and scheduler"""
+        # Calculate class weights for imbalanced data
+        num_ad = train_dataset.labels.count(1)
+        num_cn = train_dataset.labels.count(0)
+        total = num_ad + num_cn
+
+        # Inverse frequency weighting
+        weight_cn = total / (2 * num_cn) if num_cn > 0 else 1.0
+        weight_ad = total / (2 * num_ad) if num_ad > 0 else 1.0
+
+        class_weights = torch.tensor([weight_cn, weight_ad], device=config.device)
+        criterion = nn.CrossEntropyLoss(weight=class_weights)
+
+        # Set up parameter groups with different learning rates
+        fc_params = list(model.resnet.fc.parameters())
+        other_params = [
+            p
+            for name, p in model.named_parameters()
+            if p.requires_grad and not any(p is fc_param for fc_param in fc_params)
+        ]
+
+        param_groups = [
+            {"params": other_params, "lr": config.learning_rate},
+            {
+                "params": fc_params,
+                "lr": config.learning_rate * 10,
+            },  # Higher LR for final layer
+        ]
+
+        optimizer = optim.AdamW(
+            param_groups, lr=config.learning_rate, weight_decay=0.01
+        )
+        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            optimizer, T_0=5, T_mult=1, eta_min=config.learning_rate / 100
+        )
+
+        return criterion, optimizer, scheduler
 
 
 # Modified 3D ResNet model with layer freezing
@@ -323,116 +535,6 @@ class MRIModel(nn.Module):
         return self.resnet(x)
 
 
-def setup_model(freeze_layers, device, architecture):
-    """Initialize and configure the model."""
-    model = MRIModel(
-        num_classes=2, freeze_layers=freeze_layers, architecture=architecture
-    )
-    model = model.to(device)
-
-    # Get parameter statistics
-    trainable_params = model.count_trainable_params()
-    total_params = model.count_total_params()
-    frozen_params = total_params - trainable_params
-
-    model_stats = {
-        "total_params": total_params,
-        "trainable_params": trainable_params,
-        "frozen_params": frozen_params,
-        "frozen_percentage": frozen_params / total_params,
-    }
-
-    return model, model_stats
-
-
-def display_model_summary(model, input_size=(1, 1, 128, 128, 128), detailed=True):
-    """
-    Display a comprehensive summary of the model architecture and parameters.
-
-    Args:
-        model: The PyTorch model to analyze
-        input_size: The input tensor size (batch_size, channels, depth, height, width)
-        detailed: Whether to show detailed layer information
-    """
-    # Get basic model summary using torchinfo
-    summary = torchinfo.summary(
-        model,
-        input_size=input_size,
-        col_names=["input_size", "output_size", "num_params", "trainable"],
-        verbose=0,
-    )
-
-    print(f"MODEL ARCHITECTURE SUMMARY:")
-    print("=" * 80)
-    print(summary)
-
-    # Count parameters by layer type
-    layer_counts = {}
-    for name, module in model.named_modules():
-        layer_type = module.__class__.__name__
-        if layer_type not in layer_counts:
-            layer_counts[layer_type] = {"count": 0, "params": 0, "trainable_params": 0}
-
-        layer_counts[layer_type]["count"] += 1
-        params = sum(p.numel() for p in module.parameters(recurse=False))
-        trainable_params = sum(
-            p.numel() for p in module.parameters(recurse=False) if p.requires_grad
-        )
-
-        layer_counts[layer_type]["params"] += params
-        layer_counts[layer_type]["trainable_params"] += trainable_params
-
-    # Create detailed layer information dataframe
-    if detailed:
-        layers_info = []
-        for name, module in model.named_modules():
-            if len(list(module.children())) == 0:  # Only leaf modules
-                params = sum(p.numel() for p in module.parameters())
-                trainable = sum(
-                    p.numel() for p in module.parameters() if p.requires_grad
-                )
-
-                layers_info.append(
-                    {
-                        "Layer": name,
-                        "Type": module.__class__.__name__,
-                        "Parameters": params,
-                        "Trainable": trainable,
-                        "Frozen": params - trainable,
-                    }
-                )
-
-        # Create and display DataFrame
-        df = pd.DataFrame(layers_info)
-        if not df.empty:
-            print("\nDETAILED LAYER INFORMATION:")
-            print("=" * 80)
-            display(df)
-
-    # Show frozen vs trainable stats
-    total_params = model.count_total_params()
-    trainable_params = model.count_trainable_params()
-    frozen_params = total_params - trainable_params
-
-    print("\nPARAMETER STATISTICS:")
-    print("=" * 80)
-    print(f"Total parameters:    {total_params:,}")
-    print(
-        f"Trainable parameters: {trainable_params:,} ({trainable_params/total_params*100:.2f}%)"
-    )
-    print(
-        f"Frozen parameters:    {frozen_params:,} ({frozen_params/total_params*100:.2f}%)"
-    )
-
-    # Display model architecture as text
-    print("\nMODEL ARCHITECTURE DETAILS:")
-    print("=" * 80)
-    print(model)
-
-    # Return summary for potential further use
-    return summary
-
-
 class CheckpointManager:
     """Handles saving and loading model checkpoints."""
 
@@ -499,6 +601,71 @@ class CheckpointManager:
             except OSError as e:
                 print(f"Failed to log artifact to W&B: {e}")
                 print("Continuing training without W&B artifact logging...")
+
+    def save_best_checkpoint(
+        self,
+        model,
+        optimizer,
+        scheduler,
+        epoch,
+        val_acc,
+        val_loss,
+        best_val_acc,
+        best_val_loss,
+    ):
+        """Centralized best checkpoint saving with appropriate naming and logging"""
+        updated = False
+
+        # Check if best accuracy improved
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            self.save(
+                model,
+                optimizer,
+                scheduler,
+                epoch,
+                val_acc,
+                val_loss,
+                best_val_acc,
+                best_val_loss,
+                "best_model_acc.pth",
+                is_best=True,
+                metric_type="acc",
+            )
+            updated = True
+
+        # Check if best loss improved
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            self.save(
+                model,
+                optimizer,
+                scheduler,
+                epoch,
+                val_acc,
+                val_loss,
+                best_val_acc,
+                best_val_loss,
+                "best_model_loss.pth",
+                is_best=True,
+                metric_type="loss",
+            )
+            updated = True
+
+        # Save regular checkpoint
+        self.save(
+            model,
+            optimizer,
+            scheduler,
+            epoch,
+            val_acc,
+            val_loss,
+            best_val_acc,
+            best_val_loss,
+            "checkpoint.pth",
+        )
+
+        return updated, best_val_acc, best_val_loss
 
     def load(self, model, optimizer=None, scheduler=None, filepath="checkpoint.pth"):
         """
@@ -599,8 +766,8 @@ class TrainerEngine:
 
         for inputs, labels in tqdm(dataloader, desc=f"Training Epoch {epoch+1}"):
             # Move data to device with non_blocking for potential performance gain
-            inputs = inputs.to(self.device)
-            labels = labels.to(self.device)
+            inputs = DeviceManager.to_device(inputs, self.device)
+            labels = DeviceManager.to_device(labels, self.device)
 
             # Zero gradients
             self.optimizer.zero_grad(set_to_none=True)
@@ -629,8 +796,8 @@ class TrainerEngine:
             }
         )
 
-        if self.device.type == "mps":
-            empty_cache()
+        if self.device == "mps":
+            DeviceManager.empty_cache()
 
         return epoch_loss, epoch_acc
 
@@ -674,10 +841,9 @@ class TrainerEngine:
             print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
             print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%")
 
-            # Save best model by accuracy
-            if val_acc > self.best_val_acc:
-                self.best_val_acc = val_acc
-                self.checkpoint_manager.save(
+            # Save checkpoints and update best metrics
+            updated, self.best_val_acc, self.best_val_loss = (
+                self.checkpoint_manager.save_best_checkpoint(
                     self.model,
                     self.optimizer,
                     self.scheduler,
@@ -686,49 +852,23 @@ class TrainerEngine:
                     val_loss,
                     self.best_val_acc,
                     self.best_val_loss,
-                    "best_model_acc.pth",
-                    is_best=True,
-                    metric_type="acc",
                 )
-                early_stopping_counter = 0
+            )
 
-            # Save best model by loss
-            if val_loss < self.best_val_loss:
-                self.best_val_loss = val_loss
-                self.checkpoint_manager.save(
-                    self.model,
-                    self.optimizer,
-                    self.scheduler,
-                    epoch,
-                    val_acc,
-                    val_loss,
-                    self.best_val_acc,
-                    self.best_val_loss,
-                    "best_model_loss.pth",
-                    is_best=True,
-                    metric_type="loss",
-                )
-                early_stopping_counter = 0
-            else:
+            # Update early stopping counter
+            if not updated:
                 early_stopping_counter += 1
+                print(
+                    f"No improvement detected. Early stopping counter: {early_stopping_counter}/{patience}"
+                )
+            else:
+                early_stopping_counter = 0
+                print("Model improved! Early stopping counter reset.")
 
             # Check for early stopping
             if early_stopping_counter >= patience:
                 print(f"Early stopping after {epoch+1} epochs without improvement.")
                 break
-
-            # Save regular checkpoint
-            self.checkpoint_manager.save(
-                self.model,
-                self.optimizer,
-                self.scheduler,
-                epoch,
-                val_acc,
-                val_loss,
-                self.best_val_acc,
-                self.best_val_loss,
-                "checkpoint.pth",
-            )
 
         return epoch + 1, self.best_val_acc, self.best_val_loss
 
@@ -778,7 +918,9 @@ class TrainerEngine:
         # Collect predictions
         with torch.no_grad():
             for inputs, labels in tqdm(dataloader, desc=desc):
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
+                inputs, labels = DeviceManager.to_device(
+                    inputs, self.device
+                ), DeviceManager.to_device(labels, self.device)
 
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels)
@@ -796,243 +938,83 @@ class TrainerEngine:
         all_preds = np.array(all_preds)
         all_probs = np.array(all_probs)
 
-        # Calculate metrics
+        # Calculate metrics and log to W&B
         loss = running_loss / len(dataloader.dataset)
-        metrics = compute_metrics(all_labels, all_preds, all_probs)
-        acc = metrics["accuracy"] * 100  # Convert to percentage
-
-        # Log to wandb
-        log_to_wandb_dashboard(
-            all_labels, all_preds, all_probs, loss, metrics, epoch, prefix=prefix
+        metrics = MetricsManager.compute_metrics(all_labels, all_preds, all_probs)
+        MetricsManager.log_metrics(
+            all_labels, all_preds, all_probs, loss, epoch, prefix
         )
+
+        acc = metrics["accuracy"] * 100  # Convert to percentage
 
         return loss, acc
 
 
-def compute_metrics(labels, preds, probs):
-    """Calculate classification metrics using scikit-learn."""
+def main(data_path):
+    # Initialize configuration
+    config = Config(data_path=data_path)
 
-    # Basic metrics
-    metrics = {
-        "accuracy": accuracy_score(labels, preds),
-        "balanced_accuracy": balanced_accuracy_score(labels, preds),
-    }
-
-    # Class-specific accuracy
-    for cls in np.unique(labels):
-        mask = labels == cls
-        if np.any(mask):
-            metrics[f"class_{cls}_acc"] = accuracy_score(labels[mask], preds[mask])
-        else:
-            metrics[f"class_{cls}_acc"] = 0
-
-    # Precision, recall, F1
-    precision, recall, f1, _ = precision_recall_fscore_support(
-        labels, preds, average="binary", zero_division=0
-    )
-    metrics.update(
-        {
-            "precision": precision,
-            "recall": recall,
-            "f1_score": f1,
-        }
-    )
-
-    # Confusion matrix and derived metrics
-    cm = confusion_matrix(labels, preds, labels=[0, 1])
-    if cm.shape == (2, 2):
-        tn, fp, _, _ = cm.ravel()
-        metrics["specificity"] = tn / (tn + fp + 1e-10)
-
-    # ROC AUC and PR AUC (with error handling)
-    try:
-        metrics["roc_auc"] = roc_auc_score(labels, probs)
-    except Exception:
-        metrics["roc_auc"] = 0
-
-    try:
-        metrics["avg_precision"] = average_precision_score(labels, probs)
-    except Exception:
-        metrics["avg_precision"] = 0
-
-    return metrics
-
-
-def log_to_wandb_dashboard(labels, preds, probs, loss, metrics, epoch, prefix="val"):
-    """Create visualizations and log metrics to W&B."""
-
-    log_dict = {
-        f"{prefix}_loss": loss,
-        f"{prefix}_acc": metrics["accuracy"] * 100,
-        f"{prefix}_balanced_acc": metrics["balanced_accuracy"] * 100,
-        f"{prefix}_CN_acc": metrics["class_0_acc"] * 100,
-        f"{prefix}_AD_acc": metrics["class_1_acc"] * 100,
-        f"{prefix}_precision": metrics["precision"],
-        f"{prefix}_recall": metrics["recall"],
-        f"{prefix}_specificity": metrics.get("specificity", 0),
-        f"{prefix}_f1": metrics["f1_score"],
-        f"{prefix}_roc_auc": metrics["roc_auc"],
-        f"{prefix}_avg_precision": metrics["avg_precision"],
-    }
-
-    # Add epoch to log_dict only if it's not None
-    if epoch is not None:
-        log_dict["epoch"] = epoch
-
-    # Create confusion matrix visualization
-    conf_matrix = wandb.plot.confusion_matrix(
-        preds=preds, y_true=labels, class_names=["CN", "AD"]
-    )
-    log_dict["confusion_matrix"] = conf_matrix
-
-    # ROC Curve
-    try:
-        roc_curve_plot = wandb.plot.roc_curve(
-            y_true=labels,
-            y_probas=np.stack([1 - probs, probs], axis=1),
-            labels=["CN", "AD"],
-            classes_to_plot=[1],
-        )
-        log_dict["roc_curve"] = roc_curve_plot
-    except Exception as e:
-        print(f"Error creating ROC curve: {e}")
-        pass
-
-    # PR Curve
-    try:
-        precision_vals, recall_vals, _ = precision_recall_curve(labels, probs)
-        pr_data = [[x, y] for x, y in zip(recall_vals, precision_vals)]
-        pr_table = wandb.Table(data=pr_data, columns=["recall", "precision"])
-        pr_plot = wandb.plot.line(
-            pr_table, "recall", "precision", title="Precision-Recall Curve"
-        )
-        log_dict["pr_curve"] = pr_plot
-    except Exception as e:
-        print(f"Error creating PR curve: {e}")
-        pass
-
-    # Log everything to W&B
-    wandb.log(log_dict)
-
-
-def setup_wandb(config):
-    """Initialize and configure Weights & Biases."""
+    # Initialize wandb with config
     wandb.init(
         project="mri-alzheimers-classification",
-        config=config,
-        id="mczwjb4p",
-        resume="must",
+        config=config.to_dict(),
     )
-    return wandb.config
-
-
-def setup_training(model, train_dataset, learning_rate, device):
-    """Set up training components: loss function, optimizer, scheduler."""
-    # Calculate class weights for imbalanced data
-    num_ad = train_dataset.labels.count(1)
-    num_cn = train_dataset.labels.count(0)
-    total = num_ad + num_cn
-
-    # Inverse frequency weighting
-    weight_cn = total / (2 * num_cn) if num_cn > 0 else 1.0
-    weight_ad = total / (2 * num_ad) if num_ad > 0 else 1.0
-
-    class_weights = torch.tensor([weight_cn, weight_ad], device=device)
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
-
-    # Set up parameter groups with different learning rates
-    fc_params = list(model.resnet.fc.parameters())
-    other_params = [
-        p
-        for name, p in model.named_parameters()
-        if p.requires_grad and not any(p is fc_param for fc_param in fc_params)
-    ]
-
-    param_groups = [
-        {"params": other_params, "lr": learning_rate},
-        {"params": fc_params, "lr": learning_rate * 10},  # Higher LR for final layer
-    ]
-
-    optimizer = optim.AdamW(param_groups, lr=learning_rate, weight_decay=0.01)
-    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        optimizer, T_0=5, T_mult=1, eta_min=learning_rate / 100
-    )
-
-    return criterion, optimizer, scheduler
-
-
-def main(data_path):
-    # Configuration
-    config = {
-        "architecture": "r3d_18",
-        "dataset": "MRI-AD-CN",
-        "epochs": 20,
-        "batch_size": 2,
-        "learning_rate": 0.0001,
-        "optimizer": "AdamW",
-        "device": str(device),
-        "input_dimensions": "128x128x128",
-        "freeze_layers": True,
-        "data_augmentation": True,
-        "patience": 5,
-    }
-
-    # Initialize wandb
-    config = setup_wandb(config)
-
-    # Create checkpoint manager
-    checkpoint_manager = CheckpointManager("checkpoints")
+    config.update(**wandb.config)
 
     # Create datasets and loaders
-    (
-        train_dataset,
-        train_loader,
-        val_loader,
-        test_loader,
-        dataset_stats,
-    ) = create_datasets_and_loaders(
-        data_path, config.batch_size, config.data_augmentation
+    train_dataset, train_loader, val_loader, test_loader, dataset_stats = (
+        create_datasets_and_loaders(
+            config.data_path,
+            config.batch_size,
+            config.data_augmentation,
+            target_size=config.target_size,
+        )
     )
 
-    # Update wandb config with dataset stats
-    wandb.config.update(dataset_stats)
+    # Update config with dataset stats
+    config.update(**dataset_stats)
+
+    # Create checkpoint manager
+    checkpoint_manager = CheckpointManager(config.checkpoint_dir)
 
     # Setup model
-    model, model_stats = setup_model(config.freeze_layers, device, config.architecture)
+    model, model_stats = ModelManager.create_model(config)
 
     # Display model stats
     print(f"Total parameters: {model_stats['total_params']:,}")
     print(
-        f"Trainable parameters: {model_stats['trainable_params']:,} ({model_stats['trainable_params']/model_stats['total_params']:.2%})"
+        f"Trainable parameters: {model_stats['trainable_params']:,} "
+        f"({model_stats['trainable_params']/model_stats['total_params']:.2%})"
     )
     print(
-        f"Frozen parameters: {model_stats['frozen_params']:,} ({model_stats['frozen_params']/model_stats['total_params']:.2%})"
+        f"Frozen parameters: {model_stats['frozen_params']:,} "
+        f"({model_stats['frozen_params']/model_stats['total_params']:.2%})"
     )
 
-    # Update wandb config with model stats
-    wandb.config.update(model_stats)
+    # Update config with model stats
+    config.update(**model_stats)
 
     # Watch model in wandb
     wandb.watch(model, log="all", log_freq=10)
 
     # Setup training components
-    criterion, optimizer, scheduler = setup_training(
-        model, train_dataset, config.learning_rate, device
+    criterion, optimizer, scheduler = ModelManager.setup_training_components(
+        model, train_dataset, config
     )
 
     # Load checkpoint if exists
     start_epoch, best_val_acc, best_val_loss = checkpoint_manager.load(
-        model, optimizer, scheduler, "checkpoint.pth"
+        model, optimizer, scheduler
     )
 
-    # Create trainer engine with checkpoint manager
+    # Create trainer engine
     trainer = TrainerEngine(
-        model, criterion, optimizer, scheduler, device, checkpoint_manager
+        model, criterion, optimizer, scheduler, config.device, checkpoint_manager
     )
     trainer.best_val_acc = best_val_acc
     trainer.best_val_loss = best_val_loss
 
-    # Train model using the trainer
+    # Train model
     epochs_trained, best_val_acc, best_val_loss = trainer.train(
         train_loader,
         val_loader,
@@ -1074,5 +1056,5 @@ if __name__ == "__main__":
     if not os.path.exists("checkpoints"):
         os.makedirs("checkpoints")
 
-    data_path = "./data/adni-split"
+    data_path = "./data/adni-split-test"
     main(data_path)
