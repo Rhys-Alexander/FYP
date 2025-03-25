@@ -433,10 +433,116 @@ def display_model_summary(model, input_size=(1, 1, 128, 128, 128), detailed=True
     return summary
 
 
+class CheckpointManager:
+    """Handles saving and loading model checkpoints."""
+
+    def __init__(self, checkpoint_dir="checkpoints"):
+        """
+        Initialize the checkpoint manager.
+
+        Args:
+            checkpoint_dir (str): Directory to save checkpoints
+        """
+        self.checkpoint_dir = checkpoint_dir
+        os.makedirs(checkpoint_dir, exist_ok=True)
+
+    def save(
+        self,
+        model,
+        optimizer,
+        scheduler,
+        epoch,
+        val_acc,
+        val_loss,
+        best_val_acc,
+        best_val_loss,
+        filepath,
+        is_best=False,
+        metric_type=None,
+    ):
+        """
+        Save model checkpoint to file.
+
+        Args:
+            model: PyTorch model to save
+            optimizer: Optimizer state to save
+            scheduler: Scheduler state to save
+            epoch: Current epoch number
+            val_acc: Validation accuracy
+            val_loss: Validation loss
+            best_val_acc: Best validation accuracy so far
+            best_val_loss: Best validation loss so far
+            filepath: Path to save the checkpoint
+            is_best: Whether this is a best model checkpoint
+            metric_type: Type of metric for best model (e.g., "acc" or "loss")
+        """
+        checkpoint = {
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": scheduler.state_dict(),
+            "val_acc": val_acc,
+            "val_loss": val_loss,
+            "best_val_acc": best_val_acc,
+            "best_val_loss": best_val_loss,
+        }
+
+        save_path = os.path.join(self.checkpoint_dir, filepath)
+        torch.save(checkpoint, save_path)
+
+        if is_best and metric_type:
+            try:
+                artifact = wandb.Artifact(f"best_model_{metric_type}", type="model")
+                artifact.add_file(save_path)
+                wandb.log_artifact(artifact)
+                print(f"Model saved (best {metric_type})!")
+            except OSError as e:
+                print(f"Failed to log artifact to W&B: {e}")
+                print("Continuing training without W&B artifact logging...")
+
+    def load(self, model, optimizer=None, scheduler=None, filepath="checkpoint.pth"):
+        """
+        Load model checkpoint if available.
+
+        Args:
+            model: PyTorch model to load weights into
+            optimizer: Optional optimizer to load state into
+            scheduler: Optional scheduler to load state into
+            filepath: Checkpoint file to load
+
+        Returns:
+            tuple: (start_epoch, best_val_acc, best_val_loss)
+        """
+        checkpoint_path = os.path.join(self.checkpoint_dir, filepath)
+
+        if os.path.exists(checkpoint_path):
+            checkpoint = torch.load(checkpoint_path)
+            model.load_state_dict(checkpoint["model_state_dict"])
+
+            if optimizer is not None:
+                optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+            if scheduler is not None:
+                scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+            start_epoch = checkpoint["epoch"] + 1
+            best_val_acc = checkpoint.get("best_val_acc", 0.0)
+            best_val_loss = checkpoint.get("best_val_loss", float("inf"))
+            print(f"Loaded checkpoint from epoch {start_epoch}")
+        else:
+            start_epoch = 0
+            best_val_acc = 0.0
+            best_val_loss = float("inf")
+
+        return start_epoch, best_val_acc, best_val_loss
+
+
 class TrainerEngine:
     """Handles training, validation, and testing workflows."""
 
-    def __init__(self, model, criterion, optimizer, scheduler, device):
+    def __init__(
+        self, model, criterion, optimizer, scheduler, device, checkpoint_manager=None
+    ):
         """
         Initialize the trainer with model and training components.
 
@@ -446,12 +552,14 @@ class TrainerEngine:
             optimizer: Optimizer for training
             scheduler: Learning rate scheduler
             device: Computation device (CPU/GPU/MPS)
+            checkpoint_manager: Optional CheckpointManager instance
         """
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.device = device
+        self.checkpoint_manager = checkpoint_manager or CheckpointManager()
         self.best_val_acc = 0.0
         self.best_val_loss = float("inf")
 
@@ -571,7 +679,6 @@ class TrainerEngine:
         num_epochs,
         start_epoch=0,
         patience=5,
-        checkpoint_path="checkpoints/checkpoint.pth",
     ):
         """
         Execute the training loop with validation and early stopping.
@@ -582,7 +689,6 @@ class TrainerEngine:
             num_epochs: Total number of epochs to train
             start_epoch: Starting epoch (for resuming training)
             patience: Number of epochs to wait for improvement before early stopping
-            checkpoint_path: Path to save checkpoints
 
         Returns:
             tuple: (epochs_trained, best_validation_accuracy, best_validation_loss)
@@ -609,7 +715,7 @@ class TrainerEngine:
             # Save best model by accuracy
             if val_acc > self.best_val_acc:
                 self.best_val_acc = val_acc
-                save_checkpoint(
+                self.checkpoint_manager.save(
                     self.model,
                     self.optimizer,
                     self.scheduler,
@@ -627,7 +733,7 @@ class TrainerEngine:
             # Save best model by loss
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
-                save_checkpoint(
+                self.checkpoint_manager.save(
                     self.model,
                     self.optimizer,
                     self.scheduler,
@@ -650,7 +756,7 @@ class TrainerEngine:
                 break
 
             # Save regular checkpoint
-            save_checkpoint(
+            self.checkpoint_manager.save(
                 self.model,
                 self.optimizer,
                 self.scheduler,
@@ -659,7 +765,7 @@ class TrainerEngine:
                 val_loss,
                 self.best_val_acc,
                 self.best_val_loss,
-                checkpoint_path,
+                "checkpoint.pth",
             )
 
         return epoch + 1, self.best_val_acc, self.best_val_loss
@@ -679,8 +785,14 @@ class TrainerEngine:
             tuple: (test_loss, test_accuracy)
         """
         # Load best model
-        checkpoint = torch.load(best_model_path)
-        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.checkpoint_manager.load(self.model, filepath=best_model_path)
+
+        # Get epoch info from the loaded model
+        checkpoint_path = os.path.join(
+            self.checkpoint_manager.checkpoint_dir, best_model_path
+        )
+        checkpoint = torch.load(checkpoint_path)
+
         print(
             f"Loaded best model from epoch {checkpoint['epoch']+1} with accuracy {checkpoint['val_acc']:.2f}%"
         )
@@ -844,63 +956,6 @@ def setup_training(model, train_dataset, learning_rate, device):
     return criterion, optimizer, scheduler
 
 
-def load_checkpoint(model, optimizer, scheduler, checkpoint_path):
-    """Load model checkpoint if available."""
-    if os.path.exists(checkpoint_path):
-        checkpoint = torch.load(checkpoint_path)
-        model.load_state_dict(checkpoint["model_state_dict"])
-        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
-        start_epoch = checkpoint["epoch"] + 1
-        best_val_acc = checkpoint.get("best_val_acc", 0.0)
-        best_val_loss = checkpoint.get("best_val_loss", float("inf"))
-        print(f"Loaded checkpoint from epoch {start_epoch}")
-    else:
-        start_epoch = 0
-        best_val_acc = 0.0
-        best_val_loss = float("inf")
-
-    return start_epoch, best_val_acc, best_val_loss
-
-
-def save_checkpoint(
-    model,
-    optimizer,
-    scheduler,
-    epoch,
-    val_acc,
-    val_loss,
-    best_val_acc,
-    best_val_loss,
-    filepath,
-    is_best=False,
-    metric_type=None,
-):
-    """Save model checkpoint."""
-    checkpoint = {
-        "epoch": epoch,
-        "model_state_dict": model.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict(),
-        "scheduler_state_dict": scheduler.state_dict(),
-        "val_acc": val_acc,
-        "val_loss": val_loss,
-        "best_val_acc": best_val_acc,
-        "best_val_loss": best_val_loss,
-    }
-
-    torch.save(checkpoint, filepath)
-
-    if is_best and metric_type:
-        try:
-            artifact = wandb.Artifact(f"best_model_{metric_type}", type="model")
-            artifact.add_file(filepath)
-            wandb.log_artifact(artifact)
-            print(f"Model saved (best {metric_type})!")
-        except OSError as e:
-            print(f"Failed to log artifact to W&B: {e}")
-            print("Continuing training without W&B artifact logging...")
-
-
 def main(data_path):
     # Configuration
     config = {
@@ -919,6 +974,9 @@ def main(data_path):
 
     # Initialize wandb
     config = setup_wandb(config)
+
+    # Create checkpoint manager
+    checkpoint_manager = CheckpointManager("checkpoints")
 
     # Create datasets and loaders
     (
@@ -957,14 +1015,17 @@ def main(data_path):
         model, train_dataset, config.learning_rate, device
     )
 
-    # Create trainer engine
-    trainer = TrainerEngine(model, criterion, optimizer, scheduler, device)
-
     # Load checkpoint if exists
-    checkpoint_path = "checkpoints/checkpoint.pth"
-    start_epoch, best_val_acc, best_val_loss = load_checkpoint(
-        model, optimizer, scheduler, checkpoint_path
+    start_epoch, best_val_acc, best_val_loss = checkpoint_manager.load(
+        model, optimizer, scheduler, "checkpoint.pth"
     )
+
+    # Create trainer engine with checkpoint manager
+    trainer = TrainerEngine(
+        model, criterion, optimizer, scheduler, device, checkpoint_manager
+    )
+    trainer.best_val_acc = best_val_acc
+    trainer.best_val_loss = best_val_loss
 
     # Train model using the trainer
     epochs_trained, best_val_acc, best_val_loss = trainer.train(
@@ -973,7 +1034,6 @@ def main(data_path):
         config.epochs,
         start_epoch,
         config.patience,
-        checkpoint_path,
     )
 
     # Final evaluation on test set
