@@ -587,6 +587,7 @@ class CheckpointManager:
             "val_loss": val_loss,
             "best_val_acc": best_val_acc,
             "best_val_loss": best_val_loss,
+            "wandb_run_id": wandb.run.id if wandb.run else None,  # Save wandb run ID
         }
 
         save_path = os.path.join(self.checkpoint_dir, filepath)
@@ -720,6 +721,21 @@ class CheckpointManager:
         else:
             print(f"Warning: Checkpoint file not found at {checkpoint_path}")
             return None
+
+    def get_wandb_run_id(self, filepath="checkpoint.pth"):
+        """
+        Get wandb run ID from checkpoint if available.
+
+        Args:
+            filepath: Path to the checkpoint file
+
+        Returns:
+            str: wandb run ID or None if not available
+        """
+        checkpoint = self.get(filepath)
+        if checkpoint and "wandb_run_id" in checkpoint:
+            return checkpoint["wandb_run_id"]
+        return None
 
 
 class TrainerEngine:
@@ -954,10 +970,18 @@ def main(data_path):
     # Initialize configuration
     config = Config(data_path=data_path)
 
-    # Initialize wandb with config
+    # Create checkpoint manager
+    checkpoint_manager = CheckpointManager(config.checkpoint_dir)
+
+    # Check if there's an existing wandb run ID in checkpoint
+    wandb_run_id = checkpoint_manager.get_wandb_run_id()
+
+    # Initialize wandb with config, resuming if possible
     wandb.init(
         project="mri-alzheimers-classification",
         config=config.to_dict(),
+        id=wandb_run_id,  # Use existing run ID if available
+        resume="must" if wandb_run_id else None,  # Resume if ID exists
     )
     config.update(**wandb.config)
 
@@ -973,9 +997,6 @@ def main(data_path):
 
     # Update config with dataset stats
     config.update(**dataset_stats)
-
-    # Create checkpoint manager
-    checkpoint_manager = CheckpointManager(config.checkpoint_dir)
 
     # Setup model
     model, model_stats = ModelManager.create_model(config)
