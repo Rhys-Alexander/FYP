@@ -70,7 +70,7 @@ class Config:
         # Default configuration
         self.architecture = "r3d_18"
         self.dataset = "MRI-AD-CN"
-        self.epochs = 2
+        self.epochs = 20
         self.batch_size = 2
         self.learning_rate = 0.0001
         self.optimizer = "AdamW"
