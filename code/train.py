@@ -5,7 +5,6 @@ import wandb
 import torch
 
 import numpy as np
-import pandas as pd
 import nibabel as nib
 import torchio as tio
 import torch.nn as nn
@@ -13,8 +12,6 @@ import torch.optim as optim
 import torchvision.models.video as models
 
 from tqdm import tqdm
-from nilearn import plotting
-from torchinfo import torchinfo
 from torch.utils.data import Dataset, DataLoader
 
 from sklearn.metrics import (
