@@ -23,44 +23,23 @@ from sklearn.metrics import (
     average_precision_score,
     precision_recall_curve,
 )
-from IPython.display import display
 
+device = (
+    torch.accelerator.current_accelerator().type
+    if torch.accelerator.is_available()
+    else "cpu"
+)
+print(f"Using {device} device")
 
-class DeviceManager:
-    """Centralized device management"""
-
-    @staticmethod
-    def get_device():
-        """Get the best available device."""
-        return (
-            torch.accelerator.current_accelerator().type
-            if torch.accelerator.is_available()
-            else "cpu"
-        )
-
-    @staticmethod
+if device == "mps":
+    # Empty CUDA cache periodically during training to avoid memory fragmentation
     def empty_cache():
-        """Empty the device cache based on device type."""
-        device = DeviceManager.get_device()
-        if device == "cuda":
-            torch.cuda.empty_cache()
-        elif device == "mps":
-            try:
-                torch.mps.empty_cache()
-            except:
-                print("MPS cache management not available")
-                pass
-
-    @staticmethod
-    def to_device(data, device=None, non_blocking=True):
-        """Move data to device with standardized approach"""
-        if device is None:
-            device = DeviceManager.get_device()
-
-        if isinstance(data, (list, tuple)):
-            return [DeviceManager.to_device(x, device, non_blocking) for x in data]
-
-        return data.to(device, non_blocking=non_blocking)
+        try:
+            # For newer PyTorch versions with MPS cache management
+            torch.mps.empty_cache()
+        except:
+            print("MPS cache management not available")
+            pass  # Ignore if this function doesn't exist"
 
 
 class Config:
@@ -74,7 +53,7 @@ class Config:
         self.batch_size = 2
         self.learning_rate = 0.0001
         self.optimizer = "AdamW"
-        self.device = DeviceManager.get_device()
+        self.device = device
         self.input_dimensions = "128x128x128"
         self.freeze_layers = True
         self.data_augmentation = True
@@ -409,7 +388,7 @@ class ModelManager:
             freeze_layers=config.freeze_layers,
             architecture=config.architecture,
         )
-        model = DeviceManager.to_device(model, config.device)
+        model = model.to(device)
 
         # Get parameter statistics
         trainable_params = model.count_trainable_params()
@@ -437,7 +416,7 @@ class ModelManager:
         weight_cn = total / (2 * num_cn) if num_cn > 0 else 1.0
         weight_ad = total / (2 * num_ad) if num_ad > 0 else 1.0
 
-        class_weights = torch.tensor([weight_cn, weight_ad], device=config.device)
+        class_weights = torch.tensor([weight_cn, weight_ad], device=device)
         criterion = nn.CrossEntropyLoss(weight=class_weights)
 
         # Set up parameter groups with different learning rates
@@ -738,9 +717,7 @@ class CheckpointManager:
 class TrainerEngine:
     """Handles training, validation, and testing workflows."""
 
-    def __init__(
-        self, model, criterion, optimizer, scheduler, device, checkpoint_manager=None
-    ):
+    def __init__(self, model, criterion, optimizer, scheduler, checkpoint_manager=None):
         """
         Initialize the trainer with model and training components.
 
@@ -749,14 +726,12 @@ class TrainerEngine:
             criterion: Loss function
             optimizer: Optimizer for training
             scheduler: Learning rate scheduler
-            device: Computation device (CPU/GPU/MPS)
             checkpoint_manager: Optional CheckpointManager instance
         """
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.scheduler = scheduler
-        self.device = device
         self.checkpoint_manager = checkpoint_manager or CheckpointManager()
         self.best_val_acc = 0.0
         self.best_val_loss = float("inf")
@@ -774,13 +749,12 @@ class TrainerEngine:
         """
         self.model.train()
 
-        running_loss = 0.0
-        running_corrects = 0
+        running_loss = torch.tensor(0.0, device=device)
+        running_corrects = torch.tensor(0.0, device=device)
 
         for inputs, labels in tqdm(dataloader, desc=f"Training Epoch {epoch+1}"):
-            # Move data to device with non_blocking for potential performance gain
-            inputs = DeviceManager.to_device(inputs, self.device)
-            labels = DeviceManager.to_device(labels, self.device)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
 
             # Zero gradients
             self.optimizer.zero_grad(set_to_none=True)
@@ -794,13 +768,12 @@ class TrainerEngine:
             loss.backward()
             self.optimizer.step()
 
-            running_loss += loss.item() * inputs.size(0)
+            running_loss += loss * inputs.size(0)
             running_corrects += torch.sum(preds == labels.data)
 
-        epoch_loss = running_loss / len(dataloader.dataset)
-        epoch_acc = 100 * running_corrects / len(dataloader.dataset)
+        epoch_loss = (running_loss / len(dataloader.dataset)).item()
+        epoch_acc = (100 * running_corrects / len(dataloader.dataset)).item()
 
-        # Log epoch-level metrics
         wandb.log(
             {
                 "train_loss": epoch_loss,
@@ -809,8 +782,8 @@ class TrainerEngine:
             }
         )
 
-        if self.device == "mps":
-            DeviceManager.empty_cache()
+        if device == "mps":
+            empty_cache()
 
         return epoch_loss, epoch_acc
 
@@ -931,9 +904,8 @@ class TrainerEngine:
         # Collect predictions
         with torch.no_grad():
             for inputs, labels in tqdm(dataloader, desc=desc):
-                inputs, labels = DeviceManager.to_device(
-                    inputs, self.device
-                ), DeviceManager.to_device(labels, self.device)
+                inputs = inputs.to(device)
+                labels = labels.to(device)
 
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels)
@@ -1026,9 +998,7 @@ def main(data_path):
     )
 
     # Create trainer engine
-    trainer = TrainerEngine(
-        model, criterion, optimizer, scheduler, config.device, checkpoint_manager
-    )
+    trainer = TrainerEngine(model, criterion, optimizer, scheduler, checkpoint_manager)
     trainer.best_val_acc = best_val_acc
     trainer.best_val_loss = best_val_loss
 
