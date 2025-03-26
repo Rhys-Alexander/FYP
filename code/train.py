@@ -69,6 +69,13 @@ class Config:
         """Update configuration parameters"""
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        # Sync with wandb if a run is active
+        if wandb.run is not None:
+            # Update wandb config with the changed values
+            for key, value in kwargs.items():
+                wandb.config[key] = value
+
         return self
 
     def to_dict(self):
