@@ -24,6 +24,17 @@ from sklearn.metrics import (
     precision_recall_curve,
 )
 
+from monai.transforms import (
+    Compose,
+    RandRotate90,
+    RandFlip,
+    RandGaussianNoise,
+    RandGaussianSmooth,
+    RandAdjustContrast,
+    RandScaleIntensity,
+    NormalizeIntensity,
+)
+
 device = (
     torch.accelerator.current_accelerator().type
     if torch.accelerator.is_available()
@@ -252,29 +263,44 @@ class MRIDataset(Dataset):
         print(f"Loaded {ad_count} AD samples and {cn_count} CN samples")
 
     def _setup_transforms(self):
+        # if self.apply_augmentation:
+        #     self.transforms = tio.Compose(
+        #         [
+        #             # Randomly flip images along the left-right axis (axis 1 relative to channel-first data)
+        #             tio.RandomFlip(axes=(1,), p=0.5),
+        #             # Apply slight affine transformations: modest scaling, rotation (±5°),
+        #             # and translation limited to the 3-voxel padding.
+        #             tio.RandomAffine(
+        #                 scales=(0.95, 1.05),
+        #                 degrees=5,
+        #                 translation=3.0,  # in mm; max translation matches the 3 voxel padding
+        #                 p=0.75,
+        #             ),
+        #             # Add slight noise reflecting scanner variability.
+        #             tio.RandomNoise(mean=0.0, std=(0, 0.1), p=0.3),
+        #             # Adjust intensity minimally using gamma correction.
+        #             tio.RandomGamma(log_gamma=(-0.2, 0.2), p=0.3),
+        #             # Normalize intensities to zero mean and unit variance.
+        #             tio.ZNormalization(),
+        #         ]
+        #     )
+        # else:
+        #     self.transforms = tio.Compose([tio.ZNormalization()])
+
         if self.apply_augmentation:
-            self.transforms = tio.Compose(
+            self.transforms = Compose(
                 [
-                    # Randomly flip images along the left-right axis (axis 1 relative to channel-first data)
-                    tio.RandomFlip(axes=(1,), p=0.5),
-                    # Apply slight affine transformations: modest scaling, rotation (±5°),
-                    # and translation limited to the 3-voxel padding.
-                    tio.RandomAffine(
-                        scales=(0.95, 1.05),
-                        degrees=5,
-                        translation=3.0,  # in mm; max translation matches the 3 voxel padding
-                        p=0.75,
-                    ),
-                    # Add slight noise reflecting scanner variability.
-                    tio.RandomNoise(mean=0.0, std=(0, 0.1), p=0.3),
-                    # Adjust intensity minimally using gamma correction.
-                    tio.RandomGamma(log_gamma=(-0.2, 0.2), p=0.3),
-                    # Normalize intensities to zero mean and unit variance.
-                    tio.ZNormalization(),
+                    RandRotate90(prob=0.5, spatial_axes=(1, 2)),
+                    RandFlip(prob=0.5, spatial_axis=0),
+                    RandGaussianNoise(prob=0.2, mean=0.0, std=0.1),
+                    RandGaussianSmooth(prob=0.2, sigma_x=(0.5, 1.5)),
+                    RandAdjustContrast(prob=0.3, gamma=(0.7, 1.3)),
+                    RandScaleIntensity(prob=0.3, factors=0.2),
+                    NormalizeIntensity(nonzero=True),
                 ]
             )
         else:
-            self.transforms = tio.Compose([tio.ZNormalization()])
+            self.transforms = Compose([NormalizeIntensity(nonzero=True)])
 
     def __len__(self):
         return len(self.samples)
