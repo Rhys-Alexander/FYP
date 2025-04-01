@@ -115,5 +115,3 @@ This provides context for your work:
    - Check formatting, citations, and references
    - Review for coherence and flow
    - Proofread carefully
-
-<!-- TODO figure out dependencies for each section, methodology should be fine -->
