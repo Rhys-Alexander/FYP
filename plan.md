@@ -1,29 +1,8 @@
 # Dissertation Writing Plan
 
-## Start with the Methodology Section (Tuesday)
-
-The methodology section is where you have the most detailed notes and concrete information. This should be your starting point:
-
-1. **Data Acquisition and Preprocessing**
-
-   - Detail ADNI selection process
-   - Document your preprocessing pipeline (conversion, skull stripping, standardization)
-   - Explain your data splitting strategy and subject distribution
-
-2. **Model Architecture**
-
-   - Describe the 3D ResNet implementation
-   - Explain transfer learning from Kinetics400
-   - Document layer freezing experiments
-   - Briefly note your MVIT attempts and challenges
-
-### Code
-
-- Run a different frozen setup
-- Implement 3-fold cross validation
-- Document results and statistical significance
-
 ## Results, and lit review (Wednesday)
+
+- Document 3-fold cross validation results and statistical significance
 
 ### Results Section (Morning)
 
