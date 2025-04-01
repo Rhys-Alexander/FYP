@@ -141,79 +141,255 @@ Word count: X,XXX   \hfill{} Dr Rickson Mesquita
 
 
 \section{Abstract}
-500 words
+% 250 words
 
-A summary of the scope and significance of the project, the methodology / techniques used, the results gained / outcomes generated and the conclusions obtained. Abstracts are generally a single paragraph and less than 250 words.
-
-
-
-
+% - Brief overview of the problem and motivation
+% - Summary of methodology and main contributions
+% - Key results and conclusions
+% - Implications and significance
 
 \section{Introduction}
-1000 words
+% 1,000 words
 
-An introduction to the project -- your aims and objectives should go here. You can use bullet points. You probably want to keep this to half-page or so.
+% - **Problem statement**
+%   - Challenges in Alzheimer's disease diagnosis
+%   - Importance of early and accurate detection
+%   - Role of neuroimaging in diagnosis
+% - **Motivation**
+%   - Clinical importance of automating AD detection
+%   - Limitations of current diagnostic approaches
+%   - Why T1-weighted MRI is particularly valuable (accessibility, non-invasive, etc.)
+% - **Research objectives**
+%   - Examine transfer learning from video models to 3D MRI analysis
+%   - Compare 3D CNN performance to alternative approaches
+%   - Identify brain regions contributing to model decisions
+% - **Novel contributions**
+%   - Application of pre-trained video classification models for MRI analysis
+%   - Domain-specific preprocessing pipeline for structural brain MRI
+%   - Subject-level validation methodology preventing data leakage
+% - **Dissertation roadmap**
+%   - Brief outline of subsequent chapters
 
 
 \section{Literature review}
-2,000 words 
+% 2,000 words 
 
-This should demonstrate a sound understanding of the current state of knowledge in the field, which should critically assess previous and current work in the public domain, drawing out the major facts, views, trends etc. (not just listing a series of literature / information sources and/or literature/ information abstracts). 
+% - **Alzheimer's Disease and Neuroimaging**
 
-This should then develop into a description of the need for the project and so define the
-project aims and how they are to be attained in the methodology and/or experimental work. Literature in \LaTeX{} \cite{teipel2013relevance} is best done using BibTeX \cite{gunawardena2017applying, pradhan2024analysis}. For your individual project you are asked to use the Harvard method for citations -- \LaTeX{} can do it very easily (see above).
+%   - Pathophysiology with emphasis on structural changes
+%   - Medical background of AD (emphasize hippocampal atrophy as key biomarker)
+%   - Other neuroimaging markers (ventricular enlargement, cortical thinning)
+%   - Limitations of visual assessment by radiologists
+%   - Current clinical diagnostic practices and their limitations
+%   - Role of structural MRI in diagnosis
+%   - Advantages of T1-weighted imaging for AD detection
 
+% - **Deep Learning for Medical Image Analysis**
 
+%   - Evolution from traditional ML to deep learning in medical imaging
+%   - 2D vs. 3D approaches for volumetric data
+%   - Transfer learning in medical imaging context
+%   - Challenges in deep learning for medical imaging (data scarcity, interpretability)
+
+% - **3D Deep Learning Architectures**
+
+%   - 3D CNN architectures (ResNet and variants)
+%   - Vision transformers for volumetric data
+%   - Video classification models and their adaptation to medical data
+%   - Performance comparisons from existing literature
+
+% - **MRI Preprocessing for Deep Learning**
+
+%   - Skull stripping methodologies
+%   - Registration and normalization approaches
+%   - Impact of preprocessing on model performance
+%   - Current best practices
+
+% - **Current State of the Art**
+%   - Recent advances in automated AD detection
+%   - Performance benchmarks and limitations
+%   - Gap addressed by this research
 
 
 \section{Methodology}
-1500 words
+% 2,500 words
 
-Description of the methodology and/or experimental methods used to achieve aims of the project in sufficient detail to allow other researchers to repeat your work.
+% - **Data Acquisition and Characteristics**
 
+%   - ADNI dataset description and selection criteria
+%   - Patient demographics and diagnostic criteria
+%   - MRI acquisition parameters (focusing on T1w MPRAGE)
+%   - Data distribution analysis (balance, demographics)
 
+% - **Comprehensive Preprocessing Pipeline**
 
-\section{Implementation}
-1500 words
+%   - DICOM to NIfTI conversion
+%   - Skull stripping using SynthStrip (justification over alternatives)
+%   - Voxel standardization to 1×1×1mm
+%   - Cropping and reshaping strategy (128×128×128)
+%   - Bias field correction and orientation standardization
+%   - Rationale for omitting spatial normalization
 
+% - **Data Splitting Strategy**
+
+%   - Subject-level splitting methodology
+%   - Round-robin approach for balanced distribution
+%   - Final distribution statistics (subjects and scans per split)
+%   - Prevention of data leakage concerns
+
+% - **Data Augmentation**
+
+%   - Augmentation techniques implemented (affine transformations, noise, gamma)
+%   - Justification for chosen techniques
+%   - Impact on model generalization
+
+% - **Model Architectures**
+
+%   - 3D ResNet, r3d18, architecture details
+%   - Transfer learning from Kinetics400 pre-training
+%   - Layer freezing strategy with rationale
+%   - Alternative architectures explored - MC318
+%   - MViT investigation and memory constraint challenges
+%   - Parameter counts and computational considerations
+%   - Implementation details - PyTorch, Weights \& Biases
+
+% - **Training Framework and Implementation**
+
+%   - PyTorch implementation with Weights \& Biases integration
+%   - Hyperparameter selection process
+%   - batch size
+%   - Early stopping criteria
+%   - Loss function (weighted cross-entropy) and optimization strategy
+%   - Learning rate scheduling approach
+%   - Hardware configuration and constraints
+%   - Computational optimizations attempted
+
+% - **Evaluation Methodology**
+%   - Classification metrics selection and justification
+%   - Validation strategy
+%   - Statistical analysis approach
+%   - Cross-validation approach
 
 \section{Results}
-1500 words
+% 2,000 words
 
-This should be a coherent presentation of the results / outcomes of your work, including your methodology and/or experimental work, such that the key findings i.e. facts, views, trends etc. are readily revealed (this should not be a chronological presentation of what was carried out nor, usually, just the raw data).
+% - **Overall Performance Metrics**
 
-\begin{figure}
-\begin{center}
-\includegraphics[width=4in]{figures/bham_crest.pdf}
-\caption{Some example figure}
-\label{examplefig}
-\end{center}
-\end{figure}
+%   - Classification accuracy, precision, recall, F1-score
+%   - ROC curves and AUC analysis
+%   - Confusion matrices and interpretation
+%   - k fold Cross-validation results and stability analysis
+%   - Statistical significance testing
+%   - Benchmarking against literature results
+%   - Bayesian analysis on representative populations
 
-A good example of how to insert a figure in \LaTeX{} is shown in \figref{examplefig}. Note that in \LaTeX{} all figures are \emph{floats}. This means they are items that flow all the way to the top of the page.
+% - **Architectural Comparisons**
 
+%   - 3D ResNet vs. Mixed Convolution performance
+%   - Impact of layer freezing strategies
+%   - Parameter efficiency analysis
 
+% - **Preprocessing Impact Analysis**
 
+%   - Effect of different preprocessing steps
+%   - Importance of crop-and-reshape vs. simple interpolation
+%   - Impact of skull stripping quality
 
+% - **Augmentation Effectiveness**
 
+%   - Comparative analysis of different augmentation strategies
+%   - Quantitative impact on model performance
 
+% - **Training Dynamics**
+
+%   - Learning curves analysis
+%   - Convergence patterns
+%   - Overfitting observations and mitigations
+
+% - **Error Analysis**
+
+%   - Patterns in misclassifications
+%   - Subject-level vs. scan-level errors
+%   - Potential confounding factors
+
+% - **Visual Results**
+%   - Key visualizations from Weights \& Biases
+%   - Representative case studies
+%   - Visualization of model attention/activation maps XAI
 
 
 \section{Discussion}
-1500 words
+% 2,000 words
 
-An analysis of the results of your methodology and/or experimental work, relating the findings back to the assessment of current state of understanding presented in the introduction.
+% - **Interpretation of Results**
 
+%   - Critical analysis of performance metrics
+%   - Analysis of 70% accuracy in clinical context
+%   - Comparison with human radiologist performance
+%   - Significance relative to existing literature
+%   - Analysis of false positives and false negatives
 
+% - **Technical Insights**
 
+%   - Effectiveness of transfer learning from video domain
+%   - Value of 3D vs. 2D/3D hybrid approaches
+%   - Computational efficiency considerations
+%   - Memory constraints and their implications
 
+% - **Model Interpretability** (if implemented)
+
+%   - Insights from XAI analysis
+%   - Visualization techniques for model attention/activation
+%   - Correlation with known AD-affected regions
+%   - Clinical relevance of identified features
+
+% - **Clinical Implications**
+
+%   - Potential utility as a diagnostic aid
+%   - Integration into existing clinical workflows
+%   - Complementary role to other diagnostic measures
+
+% - **Technical Challenges and Solutions**
+
+%   - Memory optimization strategies
+%   - Training time challenges on consumer hardware
+%   - Data preprocessing optimization
+%   - Hardware limitations and workarounds
+%   - Data leakage prevention and subject isolation
+
+% - **Limitations**
+%   - Dataset representativeness and potential biases
+%   - Focus on binary classification (AD vs. CN)
+%   - Technical constraints (resolution, model capacity)
+%   - Hardware constraints impact on model selection
+%   - Need for prospective validation
+%   - Generalizability concerns
 
 
 \section{Conclusions}
-1000 words
+% 1,000 words
 
-A well-defined summary of the major findings and their interpretation (this should not be further discussion of the results or speculate on areas not assessed in the results and discussion).
+% - **Summary of Contributions**
 
+%   - Key findings on transfer learning effectiveness
+%   - Revisiting research objectives
+%   - Technical innovations in preprocessing pipeline
+%   - Methodological contributions (subject-level validation)
+
+% - **Future Directions**
+
+%   - Architectural improvements
+%   - Multi-class classification (including MCI)
+%   - Multimodal approaches
+%   - Longitudinal analysis potential
+%   - Clinical validation pathway
+%   - Integration of additional MRI sequences
+%   - Consideration of larger/deeper architectures with more compute
+
+% - **Broader Impact**
+%   - Implications for AI in neuroimaging
+%   - Potential for improving AD diagnosis workflow
+%   - Ethical considerations and responsible deployment
 
 
 
@@ -221,6 +397,25 @@ A well-defined summary of the major findings and their interpretation (this shou
 \bibliographystyle{IEEEtran}
 \bibliography{references} 
 
+\appendix
+
+% - **Detailed Implementation Specifics**
+
+%   - Code snippets for key components
+%   - Hyperparameter configurations
+%   - Detailed architectures
+
+% - **Additional Visualizations**
+
+%   - Extended results tables
+%   - Additional performance metrics
+%   - Sample preprocessing visualizations
+%   - Extended XAI visualizations
+
+% - **Computational Resources Analysis**
+%   - Detailed training times
+%   - Memory usage patterns
+%   - Optimization attempts
 
 
 
