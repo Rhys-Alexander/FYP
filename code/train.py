@@ -255,14 +255,6 @@ class MRIDataset(Dataset):
         if self.apply_augmentation:
             self.transforms = tio.Compose(
                 [
-                    # Apply slight affine transformations: modest scaling, rotation (±5°),
-                    # and translation limited to the 3-voxel padding.
-                    tio.RandomAffine(
-                        scales=(0.95, 1.05),
-                        degrees=5,
-                        translation=3.0,  # in mm; max translation matches the 3 voxel padding
-                        p=0.75,
-                    ),
                     # Add slight noise reflecting scanner variability.
                     tio.RandomNoise(mean=0.0, std=0.1, p=0.3),
                     # Adjust intensity minimally using gamma correction.
