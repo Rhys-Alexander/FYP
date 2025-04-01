@@ -672,6 +672,128 @@ Each checkpoint stored model weights, optimizer state, scheduler state, and perf
 
 The training loop was implemented with careful attention to numerical stability and memory management. Memory optimization techniques included setting gradients to \texttt{None} rather than zero (reducing memory fragmentation) and using tensor operations that maintained computational efficiency. For MPS acceleration, explicit cache clearing was performed at the end of each epoch to prevent memory accumulation.
 
+\subsection{Evaluation Methodology}
+
+\subsubsection{Classification Metrics Selection}
+
+A comprehensive set of classification metrics was selected to evaluate model performance, each providing specific insights:
+
+\begin{enumerate}
+    \item \textbf{Accuracy}: While providing an intuitive overall measure of classification performance, accuracy alone was recognized as potentially misleading for medical applications. This metric was supplemented with more nuanced measures.
+    
+    \item \textbf{Balanced accuracy}: Calculated as the arithmetic mean of sensitivity and specificity, this metric was particularly important given the potential clinical consequences of both false positives and false negatives in AD diagnosis.
+    
+    \item \textbf{Class-specific accuracy}: Separate accuracy calculations for AD and CN classes provided insight into potential class-specific biases in the model.
+    
+    \item \textbf{Precision and recall}: These metrics were critical for understanding the model's performance in terms of clinical relevance:
+    \begin{itemize}
+        \item Precision (positive predictive value) quantified the proportion of positive predictions that were correct, important for avoiding unnecessary interventions.
+        \item Recall (sensitivity) measured the model's ability to identify actual AD cases, crucial for early detection and intervention.
+    \end{itemize}
+    
+    \item \textbf{Specificity}: Calculated from the confusion matrix as $TN/(TN+FP)$, this metric quantified the model's ability to correctly identify CN cases, important for avoiding false alarms.
+    
+    \item \textbf{F1-score}: The harmonic mean of precision and recall provided a balanced measure that was particularly valuable given the clinical importance of both metrics in AD detection.
+    
+    \item \textbf{ROC-AUC}: The area under the receiver operating characteristic curve measured the model's ability to distinguish between classes across different classification thresholds, providing a threshold-independent performance assessment.
+    
+    \item \textbf{Average precision}: Calculated as the area under the precision-recall curve, this metric provided additional insight into model performance, particularly valuable in medical contexts where class imbalance may be present.
+\end{enumerate}
+
+This comprehensive metric set was implemented through the \texttt{MetricsManager} class, which calculated and logged all metrics at each evaluation stage:
+
+\begin{verbatim}
+metrics = {
+    "accuracy": accuracy_score(labels, preds),
+    "balanced_accuracy": balanced_accuracy_score(labels, preds),
+    "precision": precision,
+    "recall": recall,
+    "specificity": tn / (tn + fp + 1e-10),
+    "f1_score": f1,
+    "roc_auc": roc_auc_score(labels, probs),
+    "avg_precision": average_precision_score(labels, probs)
+}
+\end{verbatim}
+
+\subsubsection{Validation Strategy}
+
+A rigorous validation strategy was implemented to ensure reliable performance assessment:
+
+\begin{enumerate}
+    \item \textbf{Independent validation set}: A dedicated validation set (10\% of data) was maintained completely separate from training data, with strict subject-level isolation to prevent data leakage.
+    
+    \item \textbf{Held-out test set}: A completely separate test set (also 10\% of data) was reserved for final model evaluation, never used during model development or hyperparameter tuning.
+    
+    \item \textbf{Multiple checkpoints}: To mitigate potential bias from checkpoint selection, two separate best model checkpoints were saved:
+    \begin{itemize}
+        \item Best accuracy model: Updated whenever validation accuracy improved
+        \item Best loss model: Updated whenever validation loss decreased
+    \end{itemize}
+    
+    \item \textbf{Continuous tracking}: Performance metrics were monitored throughout training using Weights \& Biases, enabling detailed analysis of convergence patterns and potential overfitting.
+\end{enumerate}
+
+The final model evaluation was conducted exclusively on the held-out test set using the best checkpoint as determined by validation accuracy. This provided an unbiased estimate of the model's performance on new, unseen data.
+
+\subsubsection{Statistical Analysis Approach}
+
+Statistical analysis was implemented to ensure robust performance assessment:
+
+\begin{enumerate}
+    \item \textbf{Confidence intervals}: Bootstrap confidence intervals were calculated for key metrics to quantify the uncertainty in performance estimates.
+    
+    \item \textbf{Confusion matrix analysis}: Detailed analysis of the confusion matrix provided insights into the patterns of correct and incorrect classifications, particularly important for identifying potential biases in model predictions.
+    
+    \item \textbf{Comparison to baseline}: Model performance was compared to:
+    \begin{itemize}
+        \item Random chance (50\% for balanced classes)
+        \item Reported clinical accuracy ranges for radiologist assessment
+        \item Previously published algorithmic approaches using 2D slice-based methods
+    \end{itemize}
+    
+    \item \textbf{Probability distribution analysis}: The distribution of prediction probabilities was analyzed to assess model calibration and confidence, providing insights beyond binary classification performance.
+\end{enumerate}
+
+The statistical analysis approach was designed to provide a comprehensive understanding of model performance rather than relying on any single metric.
+
+\subsubsection{Cross-Validation Approach}
+
+While computational constraints of the available hardware (M1 Mac) presented significant challenges with each training run requiring approximately 20 hours, a modified 3-fold cross-validation approach was implemented to ensure robust evaluation of model generalization:
+
+\begin{enumerate}
+    \item \textbf{Subject-level 3-fold cross-validation}: The dataset was partitioned into three distinct folds, with subject-level isolation maintained across all partitions. This approach ensured that:
+    \begin{itemize}
+        \item Each subject appeared in exactly one fold
+        \item Diagnostic balance was preserved within each fold 
+        \item The model was evaluated on all available data while maintaining strict separation between training and evaluation subjects
+    \end{itemize}
+    
+    \item \textbf{Multiple architecture evaluation}: Performance was assessed across different model architectures (R3D-18, MC3-18, R2Plus1D-18) to evaluate the consistency of results across architectural variations. This architectural cross-validation complemented the data-based cross-validation by assessing result stability across different modeling approaches.
+    
+    \item \textbf{Repeated evaluations}: The best-performing model was evaluated on the test set across multiple checkpoints to assess the stability of results over the training process. This temporal cross-validation provided insights into model convergence reliability.
+    
+    \item \textbf{Visualizations and interpretability}: Rather than relying solely on quantitative metrics, visualization techniques were employed to provide qualitative insights into model behavior across different data folds and architectures.
+\end{enumerate}
+
+The 3-fold cross-validation strategy revealed performance consistency across different subject groupings, with accuracy variance of approximately ±XXX\% between folds.
+% TODO add actual accuracy variance and mention what it means plus describe standard deviation etc
+
+\subsubsection{Progressive Architecture Comparison}
+
+To validate the choice of fully 3D convolutional architectures, a systematic comparison was conducted across architectures with varying degrees of 3D feature extraction:
+
+\begin{enumerate}
+    \item \textbf{Pure 3D architecture}: R3D-18 with full 3D convolutions
+    
+    \item \textbf{Mixed 2D/3D architecture}: MC3-18 with a combination of 2D and 3D convolutions
+    
+    \item \textbf{Decomposed 3D architecture}: R2Plus1D-18 with (2+1)D convolutions that factorize 3D convolutions into separate spatial and temporal components
+\end{enumerate}
+
+This progression allowed systematic evaluation of the impact of dimensional processing on classification performance, with the hypothesis that architectures preserving full 3D spatial relationships would outperform those that partially decompose the volumetric information.
+
+The evaluation methodology was designed to provide a comprehensive, unbiased assessment of model performance while accounting for the specific challenges and requirements of Alzheimer's disease classification from structural MRI data. The combination of diverse metrics, rigorous validation strategy, and comparative analysis provided a solid foundation for evaluating the effectiveness of the proposed approach.
+
 \section{Results}
 % 2,000 words
 
