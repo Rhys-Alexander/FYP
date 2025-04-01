@@ -606,22 +606,71 @@ The final model architecture parameters were:
 
 These figures represent a significant reduction compared to larger architectures like ResNet-50 or ViT variants, making training feasible on consumer-grade hardware while maintaining sufficient capacity for the classification task. The reduced parameter count also potentially mitigated overfitting given the relatively small dataset size.
 
-Training was conducted on an M1 Mac using the MPS acceleration framework, with each epoch requiring approximately one hour of computation time. These hardware constraints influenced architectural choices, favoring parameter-efficient models that could fit in available memory while maintaining reasonable training times.
+\subsection{Training Framework and Implementation}
 
-\subsubsection{Implementation Details}
+\subsubsection{Computational Environment}
 
-The neural network implementation was developed using PyTorch (version 1.13) with the following components:
+Model training was conducted on an M1 Mac using the Metal Performance Shaders (MPS) acceleration framework. This hardware configuration imposed certain constraints on the implementation, with each epoch requiring approximately one hour of computation time and total training runs taking upwards of 20 hours. These hardware limitations influenced several implementation decisions, including batch size selection and model architecture choices.
+
+While attempts were made to optimize training speed through techniques like mixed precision training and CPU-GPU synchronization optimization, performance improvements were minimal. The majority of computational time was consumed by the model's forward pass through the 3D volumes, which could not be significantly accelerated without more powerful hardware.
+
+\subsubsection{Hyperparameter Selection}
+
+Hyperparameters were carefully selected through systematic experimentation and validation performance tracking. The final configuration included:
 
 \begin{itemize}
-    \item \textbf{Model definition}: Custom \texttt{MRIModel} class extending \texttt{nn.Module} with modifiable architecture selection
-    \item \textbf{Optimization}: AdamW optimizer with weight decay of 0.01
-    \item \textbf{Learning rate scheduling}: Cosine annealing with warm restarts (T$_0$=5) to prevent local minima
-    \item \textbf{Loss function}: Weighted cross-entropy to address class imbalance in the training data
+    \item \textbf{Learning rate strategy}: A dual learning rate approach was implemented, with the newly initialized fully connected layer receiving a 10× higher learning rate (0.001) compared to the fine-tuned convolutional layers (0.0001). This differential strategy allowed more aggressive adaptation in the task-specific output layer while making conservative updates to the pre-trained feature extraction layers.
+    
+    \item \textbf{Optimizer}: AdamW with weight decay (0.01) was selected to mitigate overfitting given the relatively small dataset size. The weight decay regularization helped constrain the model's parameter space, particularly important when working with pre-trained features.
+    
+    \item \textbf{Batch size}: Limited to 2 samples per batch due to memory constraints of processing 128$\times$128$\times$128 volumetric inputs. Despite the small batch size, training stability was maintained through appropriate learning rate selection.
+    
+    \item \textbf{Learning rate scheduling}: Cosine annealing with warm restarts ($T_0=5$) was implemented to prevent convergence to local minima. This scheduling strategy periodically reduces the learning rate following a cosine curve before resetting it, allowing the model to escape suboptimal solutions.
 \end{itemize}
 
-Implementation and training progress were tracked using Weights \& Biases (wandb), providing comprehensive experiment monitoring including learning curves, validation metrics, confusion matrices, and ROC/PR curves.
+The hyperparameter selection process was guided by both theoretical considerations and empirical validation, with each configuration tracked in Weights \& Biases to enable systematic comparison.
 
-The model architecture implementation balanced theoretical considerations with practical constraints, ultimately yielding a computationally feasible approach to 3D MRI classification through transfer learning from video recognition models.
+\subsubsection{Loss Function and Class Weighting}
+
+A weighted cross-entropy loss function was implemented to address potential class imbalance, particularly important during initial experiments when the dataset had not yet been fully balanced:
+
+\begin{verbatim}
+# Calculate class weights for imbalanced data
+num_ad = train_dataset.labels.count(1)
+num_cn = train_dataset.labels.count(0)
+total = num_ad + num_cn
+
+# Inverse frequency weighting
+weight_cn = total / (2 * num_cn) if num_cn > 0 else 1.0
+weight_ad = total / (2 * num_ad) if num_ad > 0 else 1.0
+
+class_weights = torch.tensor([weight_cn, weight_ad], device=device)
+criterion = nn.CrossEntropyLoss(weight=class_weights)
+\end{verbatim}
+
+This weighting strategy ensured that both diagnostic classes contributed equally to the loss function regardless of their representation in the training set. The weights were dynamically calculated for each training run based on the actual class distribution, providing robustness to dataset modifications.
+
+\subsubsection{Early Stopping Criteria}
+
+To prevent overfitting and optimize computational resource usage, an early stopping mechanism was implemented with a patience of 5 epochs. This approach monitored validation metrics (accuracy and loss) and terminated training when no improvement was observed for five consecutive epochs. The early stopping implementation maintained separate counters for accuracy and loss improvements, ensuring training continued as long as either metric showed enhancement. This dual-metric approach prevented premature termination in cases where one metric had plateaued while the other continued to improve.
+
+In practice, most models converged within 5-10 epochs, with early stopping typically triggering around epoch 7-8. This relatively quick convergence was partly attributable to the transfer learning approach, which provided a strong initialization for the model.
+
+\subsubsection{Checkpoint Management}
+
+A comprehensive checkpoint system was implemented to enable training resumption and model persistence. The system saved three types of checkpoints:
+
+\begin{enumerate}
+    \item \textbf{Regular checkpoints}: Saved at the end of each epoch to enable training resumption in case of interruption
+    \item \textbf{Best accuracy model}: Updated whenever a new best validation accuracy was achieved
+    \item \textbf{Best loss model}: Updated whenever a new best validation loss was achieved
+\end{enumerate}
+
+Each checkpoint stored model weights, optimizer state, scheduler state, and performance metrics to ensure seamless training resumption. Additionally, the checkpoint system integrated with Weights \& Biases to log best-performing models as artifacts, facilitating later access and deployment.
+
+\subsubsection{Training Loop Implementation}
+
+The training loop was implemented with careful attention to numerical stability and memory management. Memory optimization techniques included setting gradients to \texttt{None} rather than zero (reducing memory fragmentation) and using tensor operations that maintained computational efficiency. For MPS acceleration, explicit cache clearing was performed at the end of each epoch to prevent memory accumulation.
 
 \section{Results}
 % 2,000 words
