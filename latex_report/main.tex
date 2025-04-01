@@ -542,6 +542,86 @@ The progression from extensive transformations (using MONAI's comprehensive augm
 
 The final augmentation strategy represents an optimal balance between enhancing model robustness and preserving the clinically significant structural features essential for accurate AD classification, particularly the hippocampal atrophy patterns that serve as primary biomarkers.
 
+\subsection{Model Architectures}
+\subsubsection{3D ResNet Architecture}
+
+The primary model architecture employed was a modified 3D ResNet-18 (r3d\_18), selected for several key characteristics:
+
+\begin{enumerate}
+    \item \textbf{Residual connections}: These skip connections mitigate the vanishing gradient problem in deep networks, allowing effective training even with limited data.
+    
+    \item \textbf{3D convolutions}: Unlike 2D approaches that process each slice independently, 3D convolutions capture volumetric patterns across all three dimensions, preserving spatial relationships critical for detecting hippocampal atrophy.
+    
+    \item \textbf{Parameter efficiency}: With approximately 33 million parameters, ResNet-18 offered a balance between model capacity and computational efficiency, enabling training on consumer hardware.
+    
+    \item \textbf{Proven effectiveness}: The ResNet architecture family has demonstrated robust performance across numerous computer vision tasks, including medical imaging applications.
+\end{enumerate}
+
+% TODO add resnet diagram
+
+The implementation utilized the PyTorch \texttt{torchvision.models.video} module, specifically the \texttt{r3d\_18} model pre-trained on the Kinetics400 action recognition dataset.The first convolutional layer was modified to accept single-channel MRI volumes rather than the three-channel RGB videos used in the original architecture. The final fully connected layer was replaced to output two classes (AD vs. CN) instead of the 400 action classes in the original model. These architectural modifications preserved the core feature extraction capabilities of the ResNet model while adapting it to the specific requirements of binary volumetric MRI classification.
+
+\subsubsection{Transfer Learning Strategy}
+
+A systematic transfer learning approach was implemented with layer freezing to leverage the pre-trained weights from video classification. Early convolutional layers (stem, layer1, layer2, layer3) were frozen to preserve general low-level feature detectors learned from video data. The final residual block (layer4) and fully connected layer were unfrozen to allow adaptation to MRI-specific features. This approach maintained approximately 25\% of parameters as frozen (8.2 million) while fine-tuning the remaining 75\% (24.9 million), striking a balance between preserving pre-trained knowledge and adapting to the target domain. Initial experiments with more aggressive freezing (keeping only the final fully connected layer trainable) resulted in numerical instabilities during training, manifested as NaN losses, suggesting that significant domain adaptation was necessary given the substantial differences between video action recognition and MRI classification.
+
+Notably, the learning rate strategy was aligned with this transfer learning approach, implementing a higher learning rate (10×) for the newly initialized fully connected layer compared to the pre-trained but unfrozen convolutional layers. This differential learning rate strategy allowed more aggressive adaptation in the task-specific output layer while making more conservative updates to the pre-trained feature extraction layers.
+% TODO add a figure showing the difference in learning rates maybe point to the code
+
+\subsubsection{Alternative Architecture Exploration}
+
+To validate the architectural choices, and to justify using 3D convolutioons as opposed to the previously researched 2D methods, alternative models were explored:
+
+\begin{enumerate}
+    \item \textbf{Mixed Convolution 3D Network}: This model (MC3-18) uses a hybrid approach combining 2D and 3D convolutions, hypothesized to potentially offer computational efficiency while maintaining performance.
+      
+      Experimental results with MC3-18 showed less stable training dynamics and inferior performance compared to the pure 3D approach of R3D-18, supporting the importance of fully volumetric feature extraction for structural MRI analysis. The differences in performance provided empirical justification for the primary architectural choice.
+      % TODO add graph
+
+    \item \textbf{(2+1)D Convolution Network}: Following the investigation of MC3-18, a (2+1)D architecture was also evaluated. This approach decomposes 3D convolutions into separate spatial (2D) and temporal (1D) convolutions, a technique that has shown promise in video classification tasks.
+      
+      Results with the (2+1)D architecture revealed performance that was slightly worse than MC3-18, continuing the observed trend that classification accuracy decreased as the model architecture incorporated more 2D elements. This progression (R3D > MC3 > (2+1)D) strongly suggests that preserving the full 3D spatial context through pure 3D convolutions is critical for detecting the subtle volumetric patterns associated with Alzheimer's disease in MRI data.
+      % TODO add graph
+      
+    \item \textbf{Multiscale Vision Transformer}: Recent advances in vision transformers prompted investigation of their potential for 3D MRI classification. However, initial implementation attempts revealed significant computational barriers:
+      
+      \begin{enumerate}
+        \item Memory requirements exceeded available hardware capabilities (32GB RAM requirement for 128×128×128 volumes)
+        \item Architectural mismatch between the input dimensions required by MViT (designed for 16×224×224 video clips) and the cubical 128×128×128 MRI volumes
+        \item Transformer architectures typically require substantially larger training datasets than were available
+      \end{enumerate}
+      
+      These constraints prevented full evaluation of transformer-based approaches, highlighting an important practical limitation in applying state-of-the-art vision models to medical imaging with limited computational resources.
+\end{enumerate}
+
+\subsubsection{Parameter Counts and Computational Considerations}
+
+The final model architecture parameters were:
+
+\begin{itemize}
+    \item \textbf{Total parameters}: 33,148,482
+    \item \textbf{Trainable parameters}: 24,909,826 (75.15\%)
+    \item \textbf{Frozen parameters}: 8,238,656 (24.85\%)
+\end{itemize}
+
+These figures represent a significant reduction compared to larger architectures like ResNet-50 or ViT variants, making training feasible on consumer-grade hardware while maintaining sufficient capacity for the classification task. The reduced parameter count also potentially mitigated overfitting given the relatively small dataset size.
+
+Training was conducted on an M1 Mac using the MPS acceleration framework, with each epoch requiring approximately one hour of computation time. These hardware constraints influenced architectural choices, favoring parameter-efficient models that could fit in available memory while maintaining reasonable training times.
+
+\subsubsection{Implementation Details}
+
+The neural network implementation was developed using PyTorch (version 1.13) with the following components:
+
+\begin{itemize}
+    \item \textbf{Model definition}: Custom \texttt{MRIModel} class extending \texttt{nn.Module} with modifiable architecture selection
+    \item \textbf{Optimization}: AdamW optimizer with weight decay of 0.01
+    \item \textbf{Learning rate scheduling}: Cosine annealing with warm restarts (T$_0$=5) to prevent local minima
+    \item \textbf{Loss function}: Weighted cross-entropy to address class imbalance in the training data
+\end{itemize}
+
+Implementation and training progress were tracked using Weights \& Biases (wandb), providing comprehensive experiment monitoring including learning curves, validation metrics, confusion matrices, and ROC/PR curves.
+
+The model architecture implementation balanced theoretical considerations with practical constraints, ultimately yielding a computationally feasible approach to 3D MRI classification through transfer learning from video recognition models.
 
 \section{Results}
 % 2,000 words
