@@ -239,7 +239,7 @@ Word count: X,XXX   \hfill{} Dr Rickson Mesquita
 
 % - **Data Augmentation**
 
-%   - Augmentation techniques implemented (affine transformations, noise, gamma)
+%   - Augmentation techniques implemented
 %   - Justification for chosen techniques
 %   - Impact on model generalization
 
@@ -415,6 +415,133 @@ While conventional neuroimaging pipelines often include registration to a standa
 Validation experiments confirmed that models trained on native-space data performed comparably to or better than those trained on normalized data, supporting this methodological decision. This approach is aligned with recent literature suggesting that deep learning models for brain MRI classification benefit from learning in subject-native space rather than standardized space.
 
 The comprehensive pipeline ultimately produced a dataset of 1,300 preprocessed volumes with consistent dimensions, orientation, and intensity characteristics while preserving the structural variations essential for AD classification. This carefully crafted preprocessing strategy balances computational constraints with the preservation of clinically relevant features, providing an optimal foundation for the subsequent neural network training.
+
+\subsection{Data Splitting Strategy}
+
+The data splitting strategy was carefully designed to prevent data leakage while ensuring balanced representation of diagnostic groups across training, validation, and test sets. Unlike conventional image classification tasks, neuroimaging datasets present unique challenges as multiple scans often exist for the same subject across different timepoints, requiring subject-level rather than scan-level splitting.
+
+\subsubsection{Subject-Level Isolation}
+
+A strict subject-level isolation approach was implemented to ensure no individual subject appeared in multiple dataset partitions. This critical methodological decision was motivated by initial experiments that revealed artificially inflated performance metrics (~90\% accuracy) when subjects were allowed to appear across partitions. By completely isolating subjects between splits, a more realistic performance assessment (~70\% accuracy) was achieved, better reflecting the model's true generalization capability to unseen individuals.
+% TODO add a figure showing the difference in accuracy with and without subject isolation
+
+\subsubsection{Round-Robin Approach for Balanced Distribution}
+
+A round-robin selection algorithm was implemented to ensure balanced representation across dataset partitions while maintaining diagnostic class balance. This approach methodically cycled through subjects, allocating them to train, validation, and test sets according to predetermined ratios (80\% training, 10\% validation, 10\% test) while ensuring an equal number of scans from each diagnostic category:
+\begin{enumerate}
+    \item Subjects were first grouped by diagnostic condition (AD or CN).
+    \item Within each condition, subjects are sorted in ascending order by the number of scans that pertain to them.
+    \item The round-robin algorithm allocated subjects to each partition, test, then validation, the train, until target scan counts were achieved.
+    \item Final scan counts were balanced to prevent class imbalance (650 scans per diagnostic category).
+\end{enumerate}
+
+This approach ensured that even with minimal data there was a large enough subject diversity in the validation and test sets to give a fair evaluation.
+
+\subsubsection{Final Distribution Statistics}
+
+The final dataset distribution across partitions after implementing the subject-level isolation and round-robin approach was:
+
+\begin{itemize}
+    \item \textbf{Alzheimer's Disease (AD) cohort:}
+    \begin{itemize}
+        \item Training set: 512 scans from 133 unique subjects
+        \item Validation set: 69 scans from 35 unique subjects
+        \item Test set: 69 scans from 35 unique subjects
+    \end{itemize}
+    \item \textbf{Cognitively Normal (CN) cohort:}
+    \begin{itemize}
+        \item Training set: 511 scans from 115 unique subjects
+        \item Validation set: 70 scans from 45 unique subjects
+        \item Test set: 69 scans from 45 unique subjects
+    \end{itemize}
+\end{itemize}
+
+This distribution ensured approximately 79\% of scans were allocated to training, with the remaining 21\% evenly divided between validation and test sets, while maintaining diagnostic balance within each partition.
+
+\paragraph{Data Leakage Prevention}
+
+Special attention was devoted to preventing subtle forms of data leakage that could compromise model evaluation. The subject-level isolation was rigorously enforced through tracking of unique subject identifiers, and all preprocessing parameters (such as intensity normalization statistics) were computed independently within each partition to prevent information bleeding across splits.
+
+This methodologically sound splitting approach provided a robust foundation for model training and evaluation, ensuring that performance metrics would accurately reflect the model's ability to generalize to entirely new subjects rather than merely recognizing previously seen individuals in different scans.
+% TODO could refer to previous research that didn't do this
+
+\subsection{Data Augmentation}
+
+Data augmentation was strategically implemented to improve model generalization by exposing the network to controlled variations while preserving clinically relevant features. The augmentation pipeline evolved through experimental validation to balance diversity enhancement with preservation of diagnostic information.
+
+\subsubsection{Augmentation Strategy Development}
+
+The augmentation approach underwent several iterations, beginning with a comprehensive set of transformations adapted from general computer vision practices. Through systematic evaluation, the final pipeline was refined to include only those transformations that demonstrably improved generalization without distorting critical diagnostic features:
+
+\begin{verbatim}
+tio.Compose(
+  [
+      tio.RandomNoise(mean=0.0, std=0.1, p=0.3),
+      tio.RandomGamma(log_gamma=(-0.2, 0.2), p=0.3),
+      tio.ZNormalization(),
+  ]
+\end{verbatim}
+
+This minimalist approach was adopted after observing that more aggressive transformations either failed to improve performance or actively degraded it. The augmentation pipeline was applied exclusively to the training set, while validation and test sets received only intensity normalization to maintain evaluation consistency.
+
+\subsubsection{Justification for Selected Techniques}
+
+Each augmentation technique was selected based on specific neuroimaging considerations:
+
+\begin{enumerate}
+    \item \textbf{Random Noise Addition}
+    \begin{itemize}
+        \item Simulates natural scanner variability and noise artifacts
+        \item Promotes robustness to image quality variations across scanning sites
+        \item Implemented with a moderate noise level to preserve structural integrity
+        \item 30\% probability prevents overreliance on noise-resilient features
+    \end{itemize}
+
+    \item \textbf{Random Gamma Adjustment}
+    \begin{itemize}
+        \item Simulates intensity variations common in MRI acquisition
+        \item Enhances model robustness to contrast differences between scanners
+        \item Restricted to a narrow range to preserve anatomical relationships
+        \item Complements the bias field correction applied during preprocessing
+    \end{itemize}
+
+    \item \textbf{Z-Score Normalization} (applied to all volumes)
+    \begin{itemize}
+        \item Standardizes intensity values to zero mean and unit variance
+        \item Critical for consistent feature extraction across scans
+        \item Mitigates the effect of scanner-specific intensity scales
+        \item Applied to all datasets (not just training) to ensure consistent input distribution
+    \end{itemize}
+\end{enumerate}
+
+% TODO add demonstration of normalisation effectiveness from post-aug-norm
+
+\subsubsection{Augmentation Impact Analysis}
+
+Notably, several common augmentation techniques were deliberately excluded after experimental evaluation showed they either provided no benefit or negatively impacted performance:
+
+\begin{enumerate}
+    \item \textbf{Geometric Transformations} (rotations, flips):
+    \begin{itemize}
+        \item Initial experiments included rotations ($\pm$90°) and random flips
+        \item These transformations significantly increased training time ($\sim$20 epochs vs. $\sim$5 epochs to converge)
+        \item Provided no measurable improvement in validation accuracy
+        \item Likely redundant given the inherent orientation variability already present in MRI data
+        \item May have introduced unrealistic transformations not encountered in clinical settings
+    \end{itemize}
+
+    \item \textbf{Random Scaling}:
+    \begin{itemize}
+        \item Initially tested with scale factors of 0.9-1.1
+        \item Showed no significant improvement in generalization
+        \item Potentially disrupted the carefully standardized voxel dimensions established during preprocessing
+    \end{itemize}
+\end{enumerate}
+
+The progression from extensive transformations (using MONAI's comprehensive augmentation library) to a more focused set (using TorchIO's targeted medical imaging augmentations) and finally to the minimal set described above reflected an evidence-based refinement process. This evolution was guided by systematically monitoring validation performance and convergence speed after each modification.
+
+The final augmentation strategy represents an optimal balance between enhancing model robustness and preserving the clinically significant structural features essential for accurate AD classification, particularly the hippocampal atrophy patterns that serve as primary biomarkers.
+
 
 \section{Results}
 % 2,000 words

@@ -255,11 +255,8 @@ class MRIDataset(Dataset):
         if self.apply_augmentation:
             self.transforms = tio.Compose(
                 [
-                    # Add slight noise reflecting scanner variability.
                     tio.RandomNoise(mean=0.0, std=0.1, p=0.3),
-                    # Adjust intensity minimally using gamma correction.
                     tio.RandomGamma(log_gamma=(-0.2, 0.2), p=0.3),
-                    # Normalize intensities to zero mean and unit variance.
                     tio.ZNormalization(),
                 ]
             )
