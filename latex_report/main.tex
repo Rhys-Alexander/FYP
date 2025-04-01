@@ -280,32 +280,13 @@ After evaluating potential neuroimaging repositories (including OASIS), ADNI was
 
 \subsubsection{Image Acquisition Parameters}
 
-All selected scans were T1-weighted Magnetization Prepared Rapid Gradient Echo (MPRAGE) sequences, chosen for their:
-\begin{itemize}
-    \item Optimal gray/white matter contrast, facilitating hippocampal visualization
-    \item Standardized acquisition parameters across multiple ADNI sites
-    \item High signal-to-noise ratio for structural analysis
-    \item Widespread clinical availability and established role in AD assessment
-    \item Sensitivity to hippocampal atrophy, a primary biomarker for AD progression
-\end{itemize}
+All selected scans were T1-weighted Magnetization Prepared Rapid Gradient Echo (MPRAGE) sequences, chosen for their optimal gray/white matter contrast which facilitates hippocampal visualization, standardized acquisition parameters across multiple ADNI sites, high signal-to-noise ratio for structural analysis, and sensitivity to hippocampal atrophy, a primary biomarker for AD progression. Additionally, the widespread clinical availability and established role of MPRAGE in AD assessment made it an ideal choice for this study.
 
-The T1w MPRAGE sequences typically featured:
-\begin{itemize}
-    \item 1.5T or 3T field strength
-    \item $\sim$1mm$^3$ isotropic resolution
-    \item Acquisition matrix of approximately 256$\times$256$\times$170
-    \item TR/TE parameters standardized according to ADNI protocol
-\end{itemize}
+The T1w MPRAGE sequences typically featured field strengths of 1.5T or 3T with approximately 1mm$^3$ isotropic resolution. The acquisition matrix was approximately 256$\times$256$\times$170, with TR/TE parameters standardized according to ADNI protocol to ensure consistency across imaging sites.
 
 \subsubsection{Subject Demographics and Diagnostic Criteria}
 
-Subjects were classified into two distinct diagnostic categories:
-\begin{itemize}
-    \item Alzheimer's Disease (AD): Subjects meeting NINCDS-ADRDA criteria for probable AD
-    \item Cognitively Normal (CN): Control subjects without significant cognitive impairment
-\end{itemize}
-
-The original dataset distribution was approximately 33\% AD and 67\% CN cases. After running tests with this distribution, I suspected large amounts of overfiitng as discussed later, during methods to prevent this overfitting, more scans were included and processed. While increasing the scan pool, to address this imbalance and optimize model training, all available new AD scans were incorporated, with CN subjects sampled to achieve a final balanced 50/50 distribution.
+Subjects were classified into two distinct diagnostic categories: Alzheimer's Disease (AD) and Cognitively Normal (CN). The AD cohort consisted of subjects meeting NINCDS-ADRDA criteria for probable AD, while the CN cohort comprised control subjects without significant cognitive impairment. The original dataset distribution was approximately 33\% AD and 67\% CN cases. After initial testing revealed potential overfitting issues (discussed later), additional scans were incorporated. During this expansion phase, all available new AD scans were included, with CN subjects carefully sampled to achieve a balanced 50/50 diagnostic distribution in the final dataset to optimize model training.
 
 \subsubsection{Data Distribution Analysis}
 
@@ -322,7 +303,7 @@ Following subject-level splitting (detailed in Data Splitting Strategy section),
     \item Test set: 138 scans (69 AD, 69 CN) from 80 subjects (35 AD, 45 CN)
 \end{itemize}
 
-This distribution ensured that each partition contained sufficient samples for robust model training and evaluation while maintaining diagnostic balance. The deliberate focus on AD versus CN classification (excluding Mild Cognitive Impairment) reflects the clearer structural changes observable in established AD, particularly the hippocampal atrophy that serves as a primary biomarker for disease progression.
+This distribution ensured each partition contained sufficient samples for robust model training and evaluation while maintaining diagnostic balance. The deliberate focus on AD versus CN classification (excluding Mild Cognitive Impairment) reflects the clearer structural changes observable in established AD, particularly the hippocampal atrophy that serves as a primary biomarker for disease progression.
 
 \section{Results}
 % 2,000 words
