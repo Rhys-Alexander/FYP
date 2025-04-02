@@ -272,40 +272,31 @@ Word count: X,XXX   \hfill{} Dr Rickson Mesquita
 
 \subsection{Data Acquisition and Characteristics}
 
-The Alzheimer's Disease Neuroimaging Initiative (ADNI) database served as the primary data source for this study. ADNI represents a comprehensive, longitudinal dataset specifically designed for Alzheimer's disease research, offering rigorously standardized MRI acquisitions with corresponding clinical diagnoses and metadata.
+The Alzheimer's Disease Neuroimaging Initiative (ADNI) database served as the primary data source, providing standardized MRI acquisitions with corresponding clinical diagnoses. ADNI was selected over alternatives (including OASIS) for its comprehensive coverage, acquisition protocols, and expert-validated diagnoses.
 
-\subsubsection{Dataset Selection and Access}
+\subsubsection{Dataset Composition}
 
-After evaluating potential neuroimaging repositories (including OASIS), ADNI was selected for its comprehensive coverage, standardized acquisition protocols, and expert-validated diagnoses. Access was obtained through a formal application process describing the research objectives. The analysis initially utilized data from ADNI-1, later expanding to incorporate volumes from ADNI-2, ADNI-3, and ADNI-4 to increase sample diversity and size.
-% TODO add an appendix for my database application research objectives
+All selected scans were T1-weighted MPRAGE sequences (1.5T or 3T, 1mm³ isotropic resolution), chosen for optimal gray/white matter contrast, standardized acquisition parameters, and sensitivity to atrophy biomarkers. Additionally, the widespread clinical availability and established role of MPRAGE in AD assessment made it an ideal choice for this study. The final dataset contained 1,300 scans from 408 unique subjects, balanced between diagnostic categories:
 
-\subsubsection{Image Acquisition Parameters}
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Partition} & \textbf{AD} & \textbf{CN} \\
+\hline
+Training & 512 scans (133 subjects) & 511 scans (115 subjects) \\
+Validation & 69 scans (35 subjects) & 70 scans (45 subjects) \\
+Test & 69 scans (35 subjects) & 69 scans (45 subjects) \\
+\hline
+\end{tabular}
+\caption{Distribution of scans and subjects across dataset partitions}
+\end{table}
 
-All selected scans were T1-weighted Magnetization Prepared Rapid Gradient Echo (MPRAGE) sequences, chosen for their optimal gray/white matter contrast which facilitates hippocampal visualization, standardized acquisition parameters across multiple ADNI sites, high signal-to-noise ratio for structural analysis, and sensitivity to hippocampal atrophy, a primary biomarker for AD progression. Additionally, the widespread clinical availability and established role of MPRAGE in AD assessment made it an ideal choice for this study.
+\subsubsection{Diagnostic Criteria}
 
-The T1w MPRAGE sequences typically featured field strengths of 1.5T or 3T with approximately 1mm$^3$ isotropic resolution. The acquisition matrix was approximately 256$\times$256$\times$170, with TR/TE parameters standardized according to ADNI protocol to ensure consistency across imaging sites.
+Subjects were classified as Alzheimer's Disease (AD) or Cognitively Normal (CN) based on NINCDS-ADRDA criteria. Initially, the dataset contained approximately 33\% AD and 67\% CN cases. To address class imbalance and potential overfitting issues identified during preliminary experiments, additional AD scans were incorporated and CN subjects carefully sampled to achieve a balanced 50/50 diagnostic distribution.
 
-\subsubsection{Subject Demographics and Diagnostic Criteria}
-
-Subjects were classified into two distinct diagnostic categories: Alzheimer's Disease (AD) and Cognitively Normal (CN). The AD cohort consisted of subjects meeting NINCDS-ADRDA criteria for probable AD, while the CN cohort comprised control subjects without significant cognitive impairment. The original dataset distribution was approximately 33\% AD and 67\% CN cases. After initial testing revealed potential overfitting issues (discussed later), additional scans were incorporated. During this expansion phase, all available new AD scans were included, with CN subjects carefully sampled to achieve a balanced 50/50 diagnostic distribution in the final dataset to optimize model training.
-% TODO add a refernce or at least fact check NINCDS-ADRDA criteria
-
-\subsubsection{Data Distribution Analysis}
-
-The final dataset contained 1,300 T1w MRI scans from 408 unique subjects:
-\begin{itemize}
-    \item AD cohort: 650 scans from 203 subjects
-    \item CN cohort: 650 scans from 205 subjects
-\end{itemize}
-
-Following subject-level splitting (detailed in Data Splitting Strategy section), the distribution across partitions was:
-\begin{itemize}
-    \item Training set: 1,023 scans (512 AD, 511 CN) from 248 subjects (133 AD, 115 CN)
-    \item Validation set: 139 scans (69 AD, 70 CN) from 80 subjects (35 AD, 45 CN)
-    \item Test set: 138 scans (69 AD, 69 CN) from 80 subjects (35 AD, 45 CN)
-\end{itemize}
-
-This distribution ensured each partition contained sufficient samples for robust model training and evaluation while maintaining diagnostic balance. The deliberate focus on AD versus CN classification (excluding Mild Cognitive Impairment) reflects the clearer structural changes observable in established AD, particularly the hippocampal atrophy that serves as a primary biomarker for disease progression.
+The binary classification focus (excluding Mild Cognitive Impairment) reflects the clearer structural changes observable in established AD, particularly hippocampal atrophy, which serves as a primary biomarker for disease progression. Subject-level isolation between dataset partitions was strictly enforced to prevent data leakage, ensuring realistic performance assessment for unseen individuals.
 
 \subsection{Preprocessing Pipeline}
 
