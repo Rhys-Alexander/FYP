@@ -451,67 +451,35 @@ These figures represent a significant reduction compared to larger architectures
 
 \subsection{Training Framework and Implementation}
 
-\subsubsection{Computational Environment}
+Training was conducted on an M1 Mac using Metal Performance Shaders, with each epoch requiring approximately one hour and full training runs taking ~20 hours. This hardware constrained batch size and architecture selection. Despite attempts at optimization through mixed precision training and CPU-GPU synchronization, computational bottlenecks in the model's forward pass remained.
 
-Model training was conducted on an M1 Mac using the Metal Performance Shaders (MPS) acceleration framework. This hardware configuration imposed certain constraints on the implementation, with each epoch requiring approximately one hour of computation time and total training runs taking upwards of 20 hours. These hardware limitations influenced several implementation decisions, including batch size selection and model architecture choices.
+Hyperparameters were selected through systematic experimentation and tracked with Weights \& Biases:
 
-While attempts were made to optimize training speed through techniques like mixed precision training and CPU-GPU synchronization optimization, performance improvements were minimal. The majority of computational time was consumed by the model's forward pass through the 3D volumes, which could not be significantly accelerated without more powerful hardware.
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|p{5.5cm}|}
+\hline
+\textbf{Parameter} & \textbf{Value} & \textbf{Rationale} \\
+\hline
+Learning rate & 0.001 (FC), 0.0001 (conv) & Differential rates for aggressive output adaptation with conservative updates to pre-trained layers \\
+\hline
+Optimizer & AdamW (weight decay=0.01) & Effective regularization for the limited dataset \\
+\hline
+Batch size & 2 & Memory constraints from 128³ inputs \\
+\hline
+LR schedule & Cosine annealing ($T_0$=5) & Prevents convergence to local minima \\
+\hline
+\end{tabular}
+\caption{Optimized hyperparameter configuration}
+\end{table}
 
-\subsubsection{Hyperparameter Selection}
+A weighted cross-entropy loss function addressed potential class imbalance with weights dynamically calculated based on class distribution, particularly important during initial experiments when the dataset had not yet been fully balanced. This ensured balanced contribution to loss regardless of class representation.
 
-Hyperparameters were carefully selected through systematic experimentation and validation performance tracking. The final configuration included:
+% TODO add to appendix
 
-\begin{itemize}
-    \item \textbf{Learning rate strategy}: A dual learning rate approach was implemented, with the newly initialized fully connected layer receiving a 10× higher learning rate (0.001) compared to the fine-tuned convolutional layers (0.0001). This differential strategy allowed more aggressive adaptation in the task-specific output layer while making conservative updates to the pre-trained feature extraction layers.
-    
-    \item \textbf{Optimizer}: AdamW with weight decay (0.01) was selected to mitigate overfitting given the relatively small dataset size. The weight decay regularization helped constrain the model's parameter space, particularly important when working with pre-trained features.
-    
-    \item \textbf{Batch size}: Limited to 2 samples per batch due to memory constraints of processing 128$\times$128$\times$128 volumetric inputs. Despite the small batch size, training stability was maintained through appropriate learning rate selection.
-    
-    \item \textbf{Learning rate scheduling}: Cosine annealing with warm restarts ($T_0=5$) was implemented to prevent convergence to local minima. This scheduling strategy periodically reduces the learning rate following a cosine curve before resetting it, allowing the model to escape suboptimal solutions.
-\end{itemize}
+Early stopping with patience=5 monitored both validation accuracy and loss, ensuring training continued as long as either metric showed enhancement, preventing overfitting while optimizing computational resources. Most models converged within 5-10 epochs, with early stopping typically triggering around epoch 7-8—quick convergence attributable to the transfer learning initialization.
 
-The hyperparameter selection process was guided by both theoretical considerations and empirical validation, with each configuration tracked in Weights \& Biases to enable systematic comparison.
-
-\subsubsection{Loss Function and Class Weighting}
-
-A weighted cross-entropy loss function was implemented to address potential class imbalance, particularly important during initial experiments when the dataset had not yet been fully balanced:
-
-\begin{verbatim}
-# Calculate class weights for imbalanced data
-num_ad = train_dataset.labels.count(1)
-num_cn = train_dataset.labels.count(0)
-total = num_ad + num_cn
-
-# Inverse frequency weighting
-weight_cn = total / (2 * num_cn) if num_cn > 0 else 1.0
-weight_ad = total / (2 * num_ad) if num_ad > 0 else 1.0
-
-class_weights = torch.tensor([weight_cn, weight_ad], device=device)
-criterion = nn.CrossEntropyLoss(weight=class_weights)
-\end{verbatim}
-
-This weighting strategy ensured that both diagnostic classes contributed equally to the loss function regardless of their representation in the training set. The weights were dynamically calculated for each training run based on the actual class distribution, providing robustness to dataset modifications.
-
-\subsubsection{Early Stopping Criteria}
-
-To prevent overfitting and optimize computational resource usage, an early stopping mechanism was implemented with a patience of 5 epochs. This approach monitored validation metrics (accuracy and loss) and terminated training when no improvement was observed for five consecutive epochs. The early stopping implementation maintained separate counters for accuracy and loss improvements, ensuring training continued as long as either metric showed enhancement. This dual-metric approach prevented premature termination in cases where one metric had plateaued while the other continued to improve.
-
-In practice, most models converged within 5-10 epochs, with early stopping typically triggering around epoch 7-8. This relatively quick convergence was partly attributable to the transfer learning approach, which provided a strong initialization for the model.
-
-\subsubsection{Checkpoint Management}
-
-A comprehensive checkpoint system was implemented to enable training resumption and model persistence. The system saved three types of checkpoints:
-
-\begin{enumerate}
-    \item \textbf{Regular checkpoints}: Saved at the end of each epoch to enable training resumption in case of interruption
-    \item \textbf{Best accuracy model}: Updated whenever a new best validation accuracy was achieved
-    \item \textbf{Best loss model}: Updated whenever a new best validation loss was achieved
-\end{enumerate}
-
-Each checkpoint stored model weights, optimizer state, scheduler state, and performance metrics to ensure seamless training resumption. Additionally, the checkpoint system integrated with Weights \& Biases to log best-performing models as artifacts, facilitating later access and deployment.
-
-\subsubsection{Training Loop Implementation}
+A comprehensive checkpoint system saved regular epoch checkpoints and best models based on both accuracy and loss metrics. Each checkpoint stored model weights, optimizer state, scheduler state, and performance metrics for seamless training resumption. The system integrated with Weights \& Biases to log best models as artifacts.
 
 The training loop was implemented with careful attention to numerical stability and memory management. Memory optimization techniques included setting gradients to \texttt{None} rather than zero (reducing memory fragmentation) and using tensor operations that maintained computational efficiency. For MPS acceleration, explicit cache clearing was performed at the end of each epoch to prevent memory accumulation.
 
