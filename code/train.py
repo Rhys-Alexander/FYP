@@ -1038,5 +1038,5 @@ if __name__ == "__main__":
     if not os.path.exists("checkpoints"):
         os.makedirs("checkpoints")
 
-    data_path = "./data/adni-split"
+    data_path = "./data/adni-cv-splits/fold_1"
     main(data_path)
