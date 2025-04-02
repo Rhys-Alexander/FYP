@@ -344,52 +344,29 @@ The entire pipeline produced 1,300 preprocessed volumes with consistent dimensio
 
 \subsection{Data Splitting Strategy}
 
-The data splitting strategy was carefully designed to prevent data leakage while ensuring balanced representation of diagnostic groups across training, validation, and test sets. Unlike conventional image classification tasks, neuroimaging datasets present unique challenges as multiple scans often exist for the same subject across different timepoints, requiring subject-level rather than scan-level splitting.
+A methodologically rigorous data splitting approach was implemented to prevent data leakage while maintaining diagnostic balance across partitions. Unlike conventional image classification tasks, neuroimaging datasets require subject-level rather than scan-level splitting since multiple scans often exist for the same individual.
 
 \subsubsection{Subject-Level Isolation}
 
-A strict subject-level isolation approach was implemented to ensure no individual subject appeared in multiple dataset partitions. This critical methodological decision was motivated by initial experiments that revealed artificially inflated performance metrics (~90\% accuracy) when subjects were allowed to appear across partitions. By completely isolating subjects between splits, a more realistic performance assessment (~70\% accuracy) was achieved, better reflecting the model's true generalization capability to unseen individuals.
+A strict subject-level isolation approach ensured no individual appeared in multiple dataset partitions—a critical decision after initial experiments revealed artificially inflated performance metrics (~90\% accuracy) when subjects were allowed to cross partition boundaries. Complete subject isolation produced a more realistic performance assessment (~70\% accuracy), better reflecting the model's generalization capability to unseen individuals.
 % TODO add a figure showing the difference in accuracy with and without subject isolation
 
-\subsubsection{Round-Robin Approach for Balanced Distribution}
+\subsubsection{Partition Distribution}
 
-A round-robin selection algorithm was implemented to ensure balanced representation across dataset partitions while maintaining diagnostic class balance. This approach methodically cycled through subjects, allocating them to train, validation, and test sets according to predetermined ratios (80\% training, 10\% validation, 10\% test) while ensuring an equal number of scans from each diagnostic category:
+The dataset was divided following an 80/10/10 (train/validation/test) ratio using a round-robin algorithm that:
 \begin{enumerate}
-    \item Subjects were first grouped by diagnostic condition (AD or CN).
-    \item Within each condition, subjects are sorted in ascending order by the number of scans that pertain to them.
-    \item The round-robin algorithm allocated subjects to each partition, test, then validation, the train, until target scan counts were achieved.
-    \item Final scan counts were balanced to prevent class imbalance (650 scans per diagnostic category).
+    \item Grouped subjects by diagnostic condition
+    \item Sorted subjects in ascending order by scan count
+    \item Allocated subjects to partitions round robin to insure subject diversity across partitions
+    \item Final scan counts were balanced to maintain equal scan counts per diagnostic category
 \end{enumerate}
 
-This approach ensured that even with minimal data there was a large enough subject diversity in the validation and test sets to give a fair evaluation.
-
-\subsubsection{Final Distribution Statistics}
-
-The final dataset distribution across partitions after implementing the subject-level isolation and round-robin approach was:
-
-\begin{itemize}
-    \item \textbf{Alzheimer's Disease (AD) cohort:}
-    \begin{itemize}
-        \item Training set: 512 scans from 133 unique subjects
-        \item Validation set: 69 scans from 35 unique subjects
-        \item Test set: 69 scans from 35 unique subjects
-    \end{itemize}
-    \item \textbf{Cognitively Normal (CN) cohort:}
-    \begin{itemize}
-        \item Training set: 511 scans from 115 unique subjects
-        \item Validation set: 70 scans from 45 unique subjects
-        \item Test set: 69 scans from 45 unique subjects
-    \end{itemize}
-\end{itemize}
-
-This distribution ensured approximately 79\% of scans were allocated to training, with the remaining 21\% evenly divided between validation and test sets, while maintaining diagnostic balance within each partition.
+This approach yielded a balanced distribution with 1,023 training scans (512 AD/511 CN), 139 validation scans (69 AD/70 CN), and 138 test scans (69 AD/69 CN). The strict isolation maintained 203 unique subjects in training, 80 in validation, and 80 in test sets, with diagnostic balance preserved in each partition.
 
 \paragraph{Data Leakage Prevention}
 
-Special attention was devoted to preventing subtle forms of data leakage that could compromise model evaluation. The subject-level isolation was rigorously enforced through tracking of unique subject identifiers, and all preprocessing parameters (such as intensity normalization statistics) were computed independently within each partition to prevent information bleeding across splits.
-
-This methodologically sound splitting approach provided a robust foundation for model training and evaluation, ensuring that performance metrics would accurately reflect the model's ability to generalize to entirely new subjects rather than merely recognizing previously seen individuals in different scans.
-% TODO could refer to previous research that didn't do this
+To prevent subtle forms of data leakage, subject identifiers were rigorously tracked and preprocessing parameters (such as intensity normalization statistics) were computed independently within each partition. This methodologically sound approach ensured that performance metrics would accurately reflect the model's ability to generalize to entirely new individuals, rather than merely recognizing previously seen subjects in different scans.
+% TODO refer to previous research that didn't do this
 
 \subsection{Data Augmentation}
 
