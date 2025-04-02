@@ -370,81 +370,31 @@ To prevent subtle forms of data leakage, subject identifiers were rigorously tra
 
 \subsection{Data Augmentation}
 
-Data augmentation was strategically implemented to improve model generalization by exposing the network to controlled variations while preserving clinically relevant features. The augmentation pipeline evolved through experimental validation to balance diversity enhancement with preservation of diagnostic information.
-
-\subsubsection{Augmentation Strategy Development}
-
-The augmentation approach underwent several iterations, beginning with a comprehensive set of transformations adapted from general computer vision practices. Through systematic evaluation, the final pipeline was refined to include only those transformations that demonstrably improved generalization without distorting critical diagnostic features:
+Data augmentation was strategically implemented to improve model generalization while preserving diagnostically relevant features. Through systematic experimentation, a minimal yet effective set of transformations was identified:
 
 \begin{verbatim}
-tio.Compose(
-  [
-      tio.RandomNoise(mean=0.0, std=0.1, p=0.3),
-      tio.RandomGamma(log_gamma=(-0.2, 0.2), p=0.3),
-      tio.ZNormalization(),
-  ]
+tio.Compose([
+    tio.RandomNoise(mean=0.0, std=0.1, p=0.3),
+    tio.RandomGamma(log_gamma=(-0.2, 0.2), p=0.3),
+    tio.ZNormalization(),
+])
 \end{verbatim}
 
-This minimalist approach was adopted after observing that more aggressive transformations either failed to improve performance or actively degraded it. The augmentation pipeline was applied exclusively to the training set, while validation and test sets received only intensity normalization to maintain evaluation consistency.
-
-\subsubsection{Justification for Selected Techniques}
-
-Each augmentation technique was selected based on specific neuroimaging considerations:
-
-\begin{enumerate}
-    \item \textbf{Random Noise Addition}
-    \begin{itemize}
-        \item Simulates natural scanner variability and noise artifacts
-        \item Promotes robustness to image quality variations across scanning sites
-        \item Implemented with a moderate noise level to preserve structural integrity
-        \item 30\% probability prevents overreliance on noise-resilient features
-    \end{itemize}
-
-    \item \textbf{Random Gamma Adjustment}
-    \begin{itemize}
-        \item Simulates intensity variations common in MRI acquisition
-        \item Enhances model robustness to contrast differences between scanners
-        \item Restricted to a narrow range to preserve anatomical relationships
-        \item Complements the bias field correction applied during preprocessing
-    \end{itemize}
-
-    \item \textbf{Z-Score Normalization} (applied to all volumes)
-    \begin{itemize}
-        \item Standardizes intensity values to zero mean and unit variance
-        \item Critical for consistent feature extraction across scans
-        \item Mitigates the effect of scanner-specific intensity scales
-        \item Applied to all datasets (not just training) to ensure consistent input distribution
-    \end{itemize}
-\end{enumerate}
-
+This approach was applied exclusively to the training set, while validation and test sets received only Z-normalization to maintain evaluation consistency.
 % TODO add demonstration of normalisation effectiveness from post-aug-norm
 
-\subsubsection{Augmentation Impact Analysis}
 
-Notably, several common augmentation techniques were deliberately excluded after experimental evaluation showed they either provided no benefit or negatively impacted performance:
+Each technique addressed specific neuroimaging considerations: Random noise (30\% probability, σ=0.1) simulated scanner variability and promoted robustness to image quality differences; Gamma adjustment (±0.2 range, 30\% probability) mimicked contrast variations between scanners; Z-normalization standardized intensity values across all scans for consistent feature extraction.
 
-\begin{enumerate}
-    \item \textbf{Geometric Transformations} (rotations, flips):
-    \begin{itemize}
-        \item Initial experiments included rotations ($\pm$90°) and random flips
-        \item These transformations significantly increased training time ($\sim$20 epochs vs. $\sim$5 epochs to converge)
-        \item Provided no measurable improvement in validation accuracy
-        \item Likely redundant given the inherent orientation variability already present in MRI data
-        \item May have introduced unrealistic transformations not encountered in clinical settings
-    \end{itemize}
+Notably, several common augmentation techniques were deliberately excluded after experimental evaluation showed either no benefit or negative impact:
 
-    \item \textbf{Random Scaling}:
-    \begin{itemize}
-        \item Initially tested with scale factors of 0.9-1.1
-        \item Showed no significant improvement in generalization
-        \item Potentially disrupted the carefully standardized voxel dimensions established during preprocessing
-    \end{itemize}
-\end{enumerate}
+\begin{itemize}
+    \item \textbf{Geometric transformations} (rotations, flips) significantly increased training time (~20 vs ~5 epochs) without improving validation accuracy, likely due to inherent orientation variability already present in MRI data.
+    
+    \item \textbf{Random scaling} (0.9-1.1) showed no generalization improvement and potentially disrupted the carefully standardized voxel dimensions.
+\end{itemize}
 
-The progression from extensive transformations (using MONAI's comprehensive augmentation library) to a more focused set (using TorchIO's targeted medical imaging augmentations) and finally to the minimal set described above reflected an evidence-based refinement process. This evolution was guided by systematically monitoring validation performance and convergence speed after each modification.
-
-The final augmentation strategy represents an optimal balance between enhancing model robustness and preserving the clinically significant structural features essential for accurate AD classification, particularly the hippocampal atrophy patterns that serve as primary biomarkers.
-
+The final strategy evolved from extensive transformations to this focused set through iterative evaluation of validation performance and convergence speed, representing an optimal balance between enhancing robustness and preserving critical structural features essential for AD classification.
 \subsection{Model Architectures}
 \subsubsection{3D ResNet Architecture}
 
