@@ -398,32 +398,22 @@ The final strategy evolved from extensive transformations to this focused set th
 \subsection{Model Architectures}
 \subsubsection{3D ResNet Architecture}
 
-The primary model architecture employed was a modified 3D ResNet-18 (r3d\_18), selected for several key characteristics:
-
-\begin{enumerate}
-    \item \textbf{Residual connections}: These skip connections mitigate the vanishing gradient problem in deep networks, allowing effective training even with limited data.
-    
-    \item \textbf{3D convolutions}: Unlike 2D approaches that process each slice independently, 3D convolutions capture volumetric patterns across all three dimensions, preserving spatial relationships critical for detecting hippocampal atrophy.
-    
-    \item \textbf{Parameter efficiency}: With approximately 33 million parameters, ResNet-18 offered a balance between model capacity and computational efficiency, enabling training on consumer hardware.
-    
-    \item \textbf{Proven effectiveness}: The ResNet architecture family has demonstrated robust performance across numerous computer vision tasks, including medical imaging applications.
-\end{enumerate}
+The primary model was a modified 3D ResNet-18 (r3d\_18), selected for its residual connections that mitigate vanishing gradients, fully 3D convolutional operations to preserve volumetric spatial relationships, and parameter efficiency (33M parameters) enabling training on consumer hardware. The ResNet architecture family has demonstrated robust performance across numerous computer vision tasks, including medical imaging applications, and is used frequently in the literature. The implementation used PyTorch's pre-trained r3d\_18 model, with the first layer modified to accept single-channel MRI volumes and the final layer adapted for binary classification.
 
 % TODO add resnet diagram
-
-The implementation utilized the PyTorch \texttt{torchvision.models.video} module, specifically the \texttt{r3d\_18} model pre-trained on the Kinetics400 action recognition dataset.The first convolutional layer was modified to accept single-channel MRI volumes rather than the three-channel RGB videos used in the original architecture. The final fully connected layer was replaced to output two classes (AD vs. CN) instead of the 400 action classes in the original model. These architectural modifications preserved the core feature extraction capabilities of the ResNet model while adapting it to the specific requirements of binary volumetric MRI classification.
+The model architecture consisted of 18 layers, with the first layer being a 3D convolutional layer followed by four residual blocks, each containing two 3D convolutional layers. The final fully connected layer was adapted to output binary classification scores. The model was trained using a transfer learning approach, leveraging pre-trained weights from the Kinetics400 dataset, which provided a strong initialization for the feature extraction layers.
+% TODO add figure of the model architecture
 
 \subsubsection{Transfer Learning Strategy}
 
-A systematic transfer learning approach was implemented with layer freezing to leverage the pre-trained weights from video classification. Early convolutional layers (stem, layer1, layer2, layer3) were frozen to preserve general low-level feature detectors learned from video data. The final residual block (layer4) and fully connected layer were unfrozen to allow adaptation to MRI-specific features. This approach maintained approximately 25\% of parameters as frozen (8.2 million) while fine-tuning the remaining 75\% (24.9 million), striking a balance between preserving pre-trained knowledge and adapting to the target domain. Initial experiments with more aggressive freezing (keeping only the final fully connected layer trainable) resulted in numerical instabilities during training, manifested as NaN losses, suggesting that significant domain adaptation was necessary given the substantial differences between video action recognition and MRI classification.
+We implemented a selective transfer learning approach, freezing early convolutional layers (25\% of parameters) while allowing the final residual block and fully connected layer (75\%) to adapt to MRI-specific features. This balanced preserving pre-trained knowledge with domain adaptation. Initial experiments with more aggressive freezing (keeping only the final fully connected layer trainable) resulted in numerical instabilities during training, manifested as NaN losses, suggesting that significant domain adaptation was necessary given the substantial differences between video action recognition and MRI classification.
 
-Notably, the learning rate strategy was aligned with this transfer learning approach, implementing a higher learning rate (10×) for the newly initialized fully connected layer compared to the pre-trained but unfrozen convolutional layers. This differential learning rate strategy allowed more aggressive adaptation in the task-specific output layer while making more conservative updates to the pre-trained feature extraction layers.
+A differential learning rate strategy applied a 10× higher learning rate to the newly initialized fully connected layer compared to the fine-tuned convolutional layers, enabling aggressive adaptation in the task-specific output layer while making more conservative updates to the pre-trained feature extraction layers.
 % TODO add a figure showing the difference in learning rates maybe point to the code
 
-\subsubsection{Alternative Architecture Exploration}
+\subsubsection{Architecture Comparison}
 
-To validate the architectural choices, and to justify using 3D convolutioons as opposed to the previously researched 2D methods, alternative models were explored:
+To validate architectural choices, models were systematically evaluated with decreasing levels of 3D feature extraction:
 
 \begin{enumerate}
     \item \textbf{Mixed Convolution 3D Network}: This model (MC3-18) uses a hybrid approach combining 2D and 3D convolutions, hypothesized to potentially offer computational efficiency while maintaining performance.
