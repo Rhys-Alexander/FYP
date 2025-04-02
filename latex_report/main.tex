@@ -300,112 +300,47 @@ The binary classification focus (excluding Mild Cognitive Impairment) reflects t
 
 \subsection{Preprocessing Pipeline}
 
-The preprocessing pipeline was meticulously designed to prepare structural MRI data for optimal deep learning model performance while preserving clinically relevant features. Each stage was selected based on neuroimaging best practices and computational considerations specific to 3D neural network training.
+\subsubsection{Initial Processing and Skull Stripping}
 
-\subsubsection{DICOM to NIfTI Conversion}
-
-The initial step involved converting the native DICOM format files from ADNI to NIfTI format. This conversion was essential as NIfTI provides a consolidated volumetric representation of brain scans, facilitating 3D processing compared to the slice-by-slice arrangement of DICOM files. The conversion preserved header information while creating unified volumetric files using the \texttt{dicom2nifti} library with reorientation applied during conversion to ensure consistent initial alignment.
-
-\begin{verbatim}
-dicom2nifti.convert_directory(root, nii_output_dir, compression=True, reorient=True)
-\end{verbatim}
-
-This compression parameter was enabled to reduce storage requirements without information loss, particularly important given the large dataset size (1,300 scans).
-
-\subsubsection{Skull Stripping}
-
-Skull stripping was implemented using SynthStrip, a deep learning-based method that represents the current state-of-the-art for brain extraction. The selection of SynthStrip over traditional alternatives like Brain Extraction Tool (BET) was justified by several key advantages. SynthStrip demonstrates superior robustness to variations across diverse acquisition parameters and pathological conditions, which is critical for a heterogeneous dataset spanning multiple ADNI phases. The deep learning foundation of SynthStrip provides more consistent results across subjects compared to threshold-based methods, as more primitive approaches were shown to inaccurately crop atrophied regions, leading to significant information loss. Additionally, SynthStrip better preserves the detailed cortical boundaries that may contain relevant structural information for AD classification. As a synthetic data-trained model, SynthStrip also handles the variability in ADNI data more effectively than traditional algorithms, offering stronger generalization capability.
+Raw DICOM images were converted to NIfTI format using \texttt{dicom2nifti} with reorientation and compression enabled. This created unified volumetric files suitable for 3D analysis. Skull stripping was performed using SynthStrip, a deep learning-based method that represents the current state-of-the-art for brain extraction. It was selected for its superior performance with atrophied brains. Unlike traditional threshold-based methods (e.g., BET), SynthStrip preserved critical cortical boundaries even with atrophied brains and better handled the variability in the ADNI dataset. Despite requiring ~2.5 minutes per scan, the improved quality justified this approach by preventing potential misinterpretation of artifacts as disease-related changes.
 % TODO add referneces from synth strip paper
 
-While SynthStrip required approximately 2.5 minutes per scan on the available hardware, this processing time was justified by the quality of results, as inconsistent skull stripping could introduce confounding artifacts that might be misinterpreted as disease-related changes.
+\subsubsection{Volume Standardization}
 
-\subsubsection{Voxel Standardization}
+All volumes were resampled to isotropic 1×1×1mm voxels using ANTs with third-order spline interpolation. This standardization ensured consistent spatial representation, eliminated scanner-specific resolution variability, and enabled uniform convolutional filter operations across all dimensions.
 
-Spatial resolution standardization was performed using ANTs (Advanced Normalization Tools) to resample all volumes to isotropic 1$\times$1$\times$1mm voxels:
+\subsubsection{Adaptive Cropping Strategy}
 
-\begin{verbatim}
-resampled_img = ants.resample_image(img, (1,1,1), use_voxels=False)
-\end{verbatim}
-
-This standardization step was crucial for three primary reasons:
+A key methodological innovation was the implementation of an adaptive cropping procedure followed by reshaping to 128×128×128 dimensions. The approach:
 
 \begin{enumerate}
-    \item \textbf{Eliminating resolution variability}: Although ADNI enforces acquisition protocols, some variation in voxel dimensions exists across scanners and timepoints.
-    
-    \item \textbf{Isotropic representation}: Consistent cubic voxels ensure that convolutional filters operate uniformly across all three dimensions, preventing directional bias.
-    
-    \item \textbf{Model compatibility}: Standardized resolution simplifies the implementation of 3D convolutional operations and ensures consistent spatial feature extraction.
+    \item Identified brain-containing regions using intensity thresholding
+    \item Applied cropping with minimal padding (3 voxels)
+    \item Used cubic interpolation to reach the target dimensions
 \end{enumerate}
-
-The resampling was implemented using third-order spline interpolation to maintain structural integrity during resolution adjustment.
-
-\subsubsection{Cropping and Reshaping Strategy}
-
-A critical preprocessing innovation was an adaptive cropping procedure followed by reshaping to 128$\times$128$\times$128 dimensions. This approach was developed after initial experiments revealed significant information loss when using simple interpolation:
-
-\begin{verbatim}
-# Crop the brain with padding
-cropped_img, crop_coords = crop_brain_from_mri(img_data, padding=3)
-
-# Reshape using cubic interpolation
-zoom_factors = [t / s for t, s in zip(target_shape, cropped_img.shape)]
-final_img = zoom(cropped_img, zoom_factors, order=3)
-\end{verbatim}
-
 % TODO add appendix to crop brain from mri function
 
-The implemented method:
-\begin{enumerate}
-    \item Automatically identifies brain-containing regions using intensity thresholding
-    \item Crops to these regions with a 3-voxel padding to ensure complete brain coverage
-    \item Applies cubic interpolation to the cropped volume to reach target dimensions
-\end{enumerate}
-
-This approach preserved significantly more anatomical detail compared to naive downsampling of the entire volume, as demonstrated by validation experiments showing that this cropping strategy retained approximately 35\% more effective resolution for critical structures like the hippocampus.
-
+This method preserved approximately 35\% more effective resolution for critical structures like the hippocampus compared to naive downsampling. The 128³ dimension balanced preserving anatomical detail with memory constraints for model training.
 % TODO include figures demostarting the 96 uncropped vs 128 cropped
 
-The 128$\times$128$\times$128 dimension was selected based on:
-\begin{itemize}
-    \item Sufficient resolution to preserve hippocampal and ventricular details
-    \item Memory constraints for model training
-    \item Compatibility with deep network architectures
-    \item Balanced compromise between resolution and computational efficiency
-\end{itemize}
+\subsubsection{Intensity Normalization and Orientation}
 
-\subsubsection{Bias Field Correction and Orientation Standardization}
+N4 bias field correction was applied to mitigate intensity inhomogeneities from magnetic field variations. This prevents intensity variations that might be misinterpreted as structural changes. All volumes were reoriented to Right-Anterior-Superior (RAS) orientation to ensure consistent directionality, allowing the model to focus solely on relevant structural differences rather than arbitrary orientation variations.
+% TODO reference code from appendix
 
-N4 bias field correction was applied to mitigate intensity inhomogeneities resulting from magnetic field variations:
+\subsubsection{Omission of Spatial Normalization}
 
-\begin{verbatim}
-bias_corrected = ants.n4_bias_field_correction(input_image)
-\end{verbatim}
-
-This correction is particularly important for AD classification as it prevents intensity variations that might be misinterpreted as structural changes. Similarly, all volumes were reoriented to Right-Anterior-Superior (RAS) orientation to ensure consistent directionality across the dataset:
-
-\begin{verbatim}
-canonical_img = nib.as_closest_canonical(img)
-\end{verbatim}
-
-Standardized orientation eliminates the potential confound of different brain orientations influencing the learning process, allowing the model to focus solely on relevant structural differences.
-
-\subsubsection{Spatial Normalization}
-
-While conventional neuroimaging pipelines often include registration to a standard template space (e.g., MNI152), this step was deliberately omitted for several key reasons:
-
+Despite its common use in neuroimaging pipelines, registration to standard space (e.g., MNI152) was deliberately omitted for several reasons:
 \begin{enumerate}
-    \item \textbf{Preservation of native atrophy patterns}: Spatial normalization can distort or obscure the very atrophic changes that differentiate AD patients from controls, particularly in the hippocampus.
-    
-    \item \textbf{Model capability}: Deep convolutional networks demonstrate inherent translation invariance and can learn to identify relevant structures regardless of precise alignment, making explicit normalization potentially redundant.
-    
-    \item \textbf{Avoiding interpolation artifacts}: The registration process introduces additional interpolation steps that can smooth subtle structural boundaries critical for classification.
-    
-    \item \textbf{Computational efficiency}: Omitting this intensive processing step significantly reduced preprocessing time without compromising classification performance.
+    \item Preservation of native atrophy patterns that could be distorted during normalization
+    \item Reliance on CNN translation invariance to identify structures without explicit alignment
+    \item Avoidance of interpolation artifacts that might smooth critical structural boundaries
+    \item Computational efficiency gains without compromising classification performance
 \end{enumerate}
 
-Validation experiments confirmed that models trained on native-space data performed comparably to or better than those trained on normalized data, supporting this methodological decision. This approach is aligned with recent literature suggesting that deep learning models for brain MRI classification benefit from learning in subject-native space rather than standardized space.
+Validation experiments confirmed that models trained on native-space data performed comparably to or better than those using normalized data, supporting this methodological decision and aligning with recent literature suggesting deep learning models for brain MRI benefit from native-space learning.
 
-The comprehensive pipeline ultimately produced a dataset of 1,300 preprocessed volumes with consistent dimensions, orientation, and intensity characteristics while preserving the structural variations essential for AD classification. This carefully crafted preprocessing strategy balances computational constraints with the preservation of clinically relevant features, providing an optimal foundation for the subsequent neural network training.
+The entire pipeline produced 1,300 preprocessed volumes with consistent dimensions, orientation, and intensity characteristics while preserving the structural variations essential for AD classification.
 
 \subsection{Data Splitting Strategy}
 
