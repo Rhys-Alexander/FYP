@@ -277,7 +277,7 @@ Before training i had the scans in my train set undergo augmentations to improve
 
 Quantitative Metrics: Accuracy, precision, recall, F1-score, AUC-ROC
 Confusion Matrices: Breakdown of classification
-After lots of training my final models are currently getting about 70% accuracy, I want to compare this to how accurate radiologist/doctor is when diagnosing just off of an MRI scan. Also need to to k-fold cross validation to make sure my metrics are good and so I know tthe standard deviation. If Ican beat a doctor I'm happpy I want this to be one part of the decision tree that helps diagnosis becuase it may well be the case that not all AD scans can be classified easily because atrophy is something we see in advanced AD.
+After lots of training my final models are currently getting about 77% accuracy, I want to compare this to how accurate radiologist/doctor is when diagnosing just off of an MRI scan. After 3-fold cross validation I'm getting a mean of 77.26% and a satndard deiation of 2.34. If I can beat a doctor I'm happpy I want this to be one part of the decision tree that helps diagnosis becuase it may well be the case that not all AD scans can be classified easily because atrophy is something we see in advanced AD.
 Also want a bayesian analysis test so not just on 50/50 but on the kind of group that this qould be used on in practice.
 Also want to try XAI so I can relate it with hippocampal atrophy or not. Suggest how It would be intersting to see this done with multiclass setup I would expect it's more accurate the more advance the AD.
 
@@ -300,7 +300,8 @@ Also want to try XAI so I can relate it with hippocampal atrophy or not. Suggest
 - [x] mvit
   - that shit don' work unless you got 32gb of ram and even then it'smade for 16x224x224 which is very different
 - [ ] could download all the data again, process without reshaping, use MPRAGE and accel
-- [ ] K-fold cross validation, if crazy diff the split understand using xml
+- [x] K-fold cross validation, if crazy diff the split understand using xml
+  - done now, got mean 77.26 mean and 2.34 sigma
 - [ ] xai
   - [ ] what its recognizing
   - [ ] Give an idea of how the classification works

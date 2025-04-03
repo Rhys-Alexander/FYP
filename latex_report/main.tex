@@ -348,7 +348,7 @@ A methodologically rigorous data splitting approach was implemented to prevent d
 
 \subsubsection{Subject-Level Isolation}
 
-A strict subject-level isolation approach ensured no individual appeared in multiple dataset partitions—a critical decision after initial experiments revealed artificially inflated performance metrics (~90\% accuracy) when subjects were allowed to cross partition boundaries. Complete subject isolation produced a more realistic performance assessment (~70\% accuracy), better reflecting the model's generalization capability to unseen individuals.
+A strict subject-level isolation approach ensured no individual appeared in multiple dataset partitions—a critical decision after initial experiments revealed artificially inflated performance metrics (~90\% accuracy) when subjects were allowed to cross partition boundaries. Complete subject isolation produced a more realistic performance assessment (~77\% accuracy), better reflecting the model's generalization capability to unseen individuals.
 % TODO add a figure showing the difference in accuracy with and without subject isolation
 
 \subsubsection{Partition Distribution}
@@ -538,8 +538,7 @@ Despite computational constraints (20-hour training runs on M1 Mac), model robus
     \item Visualization techniques to provide qualitative insights into model behavior, rather than relying solely on quantitative metrics
 \end{itemize}
 
-Cross-validation revealed consistent performance across subject groupings (accuracy variance ±XXX\% between folds), while architectural evaluation demonstrated that fully 3D convolutional approaches systematically outperformed partial 2D/3D hybrid methods, confirming the importance of preserving volumetric spatial relationships for detecting subtle AD-related structural changes.
-% TODO add actual accuracy variance and mention what it means plus describe standard deviation etc
+Cross-validation reveal performance consistency across subject groupings, while architectural evaluation demonstrate whether fully 3D convolutional approaches systematically outperform partial 2D/3D hybrid methods
 
 \section{Results}
 % 2,000 words
@@ -556,7 +555,7 @@ Cross-validation revealed consistent performance across subject groupings (accur
 
 % - **Architectural Comparisons**
 
-%   - 3D ResNet vs. Mixed Convolution performance
+%   - 3D ResNet vs. Mixed Convolution vs 2plus1D performance
 %   - Impact of layer freezing strategies
 %   - Parameter efficiency analysis
 

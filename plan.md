@@ -1,10 +1,6 @@
 # Dissertation Writing Plan
 
-## Results, and lit review (Wednesday)
-
-- Document 3-fold cross validation results and statistical significance
-
-### Results Section (Morning)
+## Results (Thursday)
 
 Since you've already conducted experiments:
 
@@ -18,7 +14,7 @@ Since you've already conducted experiments:
    - Interpret your ~70% accuracy results
    - Compare frozen vs. unfrozen layer performance
 
-### Literature Review (Wednesday Afternoon - Thursday)
+## Literature Review (Friday)
 
 This provides context for your work:
 
@@ -35,7 +31,7 @@ This provides context for your work:
 - Correlate with anatomical regions (particularly hippocampus)
 - Document findings for Results section 4.4
 
-## Complete Discussion & Limitations (Thursday - Friday Morning)
+## Complete Discussion & Limitations (Saturday)
 
 1. **Discussion**
 
@@ -48,7 +44,7 @@ This provides context for your work:
    - Dataset constraints
    - Outline your planned XAI and k-fold validation work
 
-## Finish with Conclusion, Intro, and Abstract (Friday Afternoon)
+## Conclusion, Intro, and Abstract (Sunday)
 
 1. **Conclusion**
 
