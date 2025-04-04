@@ -171,45 +171,258 @@ Word count: X,XXX   \hfill{} Dr Rickson Mesquita
 %   - Brief outline of subsequent chapters
 
 
-\section{Literature review}
+\section{Literature Review}
 % 2,000 words 
+% Writing tips:
+% 1. Begin each section with broader concepts before narrowing to specifics
+% 2. Make explicit connections between sections to create a coherent narrative
+% 3. Balance technical detail with accessibility for interdisciplinary readers
+% 4. Maintain a critical perspective, noting limitations of existing approaches
+% 5. Use transitions to highlight how each topic relates to your research focus
+% 6. Conclude each major section with implications for your research approach
 
-% - **Alzheimer's Disease and Neuroimaging**
 
-%   - Pathophysiology with emphasis on structural changes
-%   - Medical background of AD (emphasize hippocampal atrophy as key biomarker)
-%   - Other neuroimaging markers (ventricular enlargement, cortical thinning)
-%   - Limitations of visual assessment by radiologists
-%   - Current clinical diagnostic practices and their limitations
-%   - Role of structural MRI in diagnosis
-%   - Advantages of T1-weighted imaging for AD detection
+\subsection{Alzheimer's Disease and Neuroimaging}
 
-% - **Deep Learning for Medical Image Analysis**
+\subsubsection{Pathophysiology with Emphasis on Structural Changes}
 
-%   - Evolution from traditional ML to deep learning in medical imaging
-%   - 2D vs. 3D approaches for volumetric data
-%   - Transfer learning in medical imaging context
-%   - Challenges in deep learning for medical imaging (data scarcity, interpretability)
+% - Definition, prevalence, and burden of Alzheimer's Disease
+% - Progression of pathological changes (amyloid plaques, neurofibrillary tangles)
+% - Timeline of structural vs. cognitive symptoms
+% - Regional patterns of neurodegeneration
+% - Suggested references:
+% - Teipel et al. (2013) for relevance of MRI in early detection
+% - Jack et al. for AD pathophysiology progression models
 
-% - **3D Deep Learning Architectures**
+\subsubsection{Hippocampal Atrophy as Primary Biomarker}
 
-%   - 3D CNN architectures (ResNet and variants)
-%   - Vision transformers for volumetric data
-%   - Video classification models and their adaptation to medical data
-%   - Performance comparisons from existing literature
+% - Hippocampal volume reduction patterns and progression
+% - Quantification methods and established thresholds
+% - Correlation with cognitive decline and disease progression
+% - Sensitivity and specificity as a diagnostic marker
+% - Suggested references:
+% - Teipel et al. (2013) for hippocampal changes
+% - Cuingnet et al. (2011) for hippocampal measurement methods
+% - Jack et al (1992) for hippocampal volumetry
 
-% - **MRI Preprocessing for Deep Learning**
+\subsubsection{Additional Neuroimaging Markers}
 
-%   - Skull stripping methodologies
-%   - Registration and normalization approaches
-%   - Impact of preprocessing on model performance
-%   - Current best practices
+% - Ventricular enlargement patterns and diagnostic value
+% - Cortical thinning in temporal, parietal, and frontal regions
+% - White matter changes and connectivity disruptions
+% - Relative sensitivity of different markers
+% - Suggested references:
+% - Teipel et al. (2013) for multiple imaging markers
+% - L Ferrarini et al. (2006) for ventricular changes
+% - L Gutiérrez-Galve et al. (2009) on cortical thickness
 
-% - **Current State of the Art**
-%   - Recent advances in automated AD detection
-%   - Performance benchmarks and limitations
-%   - Gap addressed by this research
+\subsubsection{Current Clinical Diagnostic Practices and Limitations}
 
+% - Diagnostic criteria (NINCDS-ADRDA) and workflow
+% - Multi-modal diagnostic approach (clinical, cognitive, biomarkers)
+% - Inter-reader variability in visual assessment
+% - Challenges in early and accurate detection
+% - Delay between pathological changes and clinical diagnosis
+% - Suggested references:
+% - Cuingnet et al. (2011) for diagnostic challenges
+% - jack et al. (2018) for NIA-AA guidelines
+% - B Dubois et al. (2007) for NINCDS-ADRDA
+% - Klöppel et al. (2008) on radiologist performance
+
+\subsubsection{Role of Structural MRI in Diagnosis}
+
+% - Position in diagnostic algorithm and clinical workflow
+% - Complementary role to clinical assessment and other biomarkers
+% - Accessibility advantages compared to PET and CSF markers
+% - Limitations of visual/manual assessment
+% - Suggested references:
+% - Teipel et al. (2013) covers comprehensive role of MRI
+% - B Dubois et al. (2007) for NINCDS-ADRDA on MRI in current diagnostic guidelines
+
+\subsubsection{Advantages of T1-weighted Imaging for AD Detection}
+
+% - Optimal tissue contrast for detecting atrophy
+% - Standardized acquisition protocols (MPRAGE)
+% - Wider availability compared to specialized sequences
+% - Trade-offs with other imaging modalities
+% - Suggested references:
+% - Herrera et al. (2013) for MRI techniques in classification
+
+\subsection{Deep Learning for Medical Image Analysis}
+
+\subsubsection{Evolution from Traditional ML to Deep Learning}
+
+% - Historical progression from handcrafted features to learned representations
+% - Traditional machine learning techniques in neuroimaging
+% - Key milestones in deep learning for medical imaging
+% - Performance comparisons between approaches
+% - Suggested references:
+% - Litjens et al. (2017) for survey on deep learning in medical imaging
+% - Cuingnet et al. (2011) for earlier machine learning approaches
+% - M Bari Antoret al. (2021) for a comparative analysis of ML algorithms to predict AD
+
+\subsubsection{2D vs. 3D Approaches for Volumetric Data}
+
+% - Fundamental differences in information extraction
+% - Trade-offs between slice-based and volumetric analysis
+% - Memory and computational considerations
+% - Information loss in 2D vs. implementation complexity in 3D
+% - Suggested references:
+% - Yang et al. (2021) for dimensionality considerations
+% - Payan and Montana (2015) for early 3D CNN work
+% - Sarraf and Tofighi (2016) and Liang et al. (2021) for 2D approaches
+
+\subsubsection{Transfer Learning in Medical Imaging}
+
+% - Definition and rationale for transfer learning
+% - Domain shift challenges between natural images and medical imaging
+% - Pre-training strategies (natural images vs. medical domain) and layer freezing approaches
+% - Previous successes in neuroimaging applications
+% - Suggested references:
+% - Hon and Khan (2017), Ebrahimi-Ghahnavieh et al. (2019), Acharya et al. (2021) for transfer learning for AD
+% - Maqsood et al. (2019) and Wu et al. (2022) for 3D transfer learning
+% - Mehmood et al. (2021) for early diagnosis applications
+% - Francis et al. (2025) for attention mechanisms with transfer learning
+% - A Ebrahimi et al. (2020) on a practically indistinguishable project to mine
+
+\subsubsection{Challenges in Deep Learning for Medical Imaging}
+
+% - Data scarcity and class imbalance issues
+% - Interpretability requirements in clinical context
+% - Validation challenges and risks of overfitting
+% - Privacy and ethical considerations
+% - Suggested references:
+% - Litjens et al. (2017) for broad challenges
+% - C Davatzikos et al. (2019) for ML neuroimaging challenges
+
+\subsection{3D Deep Learning Architectures}
+
+\subsubsection{3D CNN Architectures (ResNet and Variants)}
+
+% - Core principles of 3D CNNs
+% - Residual learning principles applied to 3D volumes
+% - Architecture details and implementation considerations
+% - Parameter efficiency and resource requirements
+% - Suggested references:
+% - Payan and Montana (2015) for early implementations
+% - Wu et al. (2022) for 3D transfer learning networks
+% - A Ebrahimi et al. (2020) on 3D ResNet implementations and optimizations
+
+\subsubsection{Vision Transformers for Volumetric Data}
+
+% - Adaptation of transformer architectures to 3D medical data
+% - Self-attention mechanisms for spatial context
+% - Performance comparisons with CNN-based approaches
+% - Advantages and limitations for neuroimaging
+% - Suggested references:
+% - Y Lyu et al. (2022) for AD vision transformers
+% - Lu et al. (2025) for efficient vision transformers
+% - Yan et al. (2025) for hybrid ResNet-ViT approach
+% - Mubonanyikuzo et al. (2025) for systematic review
+
+\subsubsection{Video Classification Models and Medical Adaptation}
+
+% - Parallels between video sequences and volumetric medical data
+% - Key video architectures (MC13, R(2+1)D, r3d_18, etc.)
+% - Temporal vs. spatial dimension modeling
+% - Transfer learning strategies from video domains
+% - Suggested references:
+% - A Ebrahimi et al. (2020) on a practically indistinguishable project to mine
+% - D Tran et al. (2018) on temporal/spatial modeling strategies plus resnet mc, 2+1, and normal
+
+\subsubsection{Performance Comparisons from Existing Literature}
+
+% - Benchmark results across architecture types
+% - Standardized datasets and evaluation metrics
+% - Computational efficiency vs. accuracy trade-offs
+% - Memory requirements considerations
+% - Suggested references:
+% - Cuingnet et al. (2011) for early benchmarking
+% - Basaia et al. (2019) for more recent comparisons
+% - N Garg et al. (2023) updated comparative study
+
+\subsection{MRI Preprocessing for Deep Learning}
+
+\subsubsection{Skull Stripping Methodologies}
+
+% - Importance for AD classification
+% - Comparison of traditional vs. learning-based (synthstrip) approaches
+% - Quality considerations and failure modes
+% - Impact on downstream classification performance
+% - Suggested references:
+% - A Hoopes et al. (2022) on synthstrip
+% - A Fatima et al. (2020) on skull stripping methods and their impact
+
+\subsubsection{Registration and Normalization Approaches}
+
+% - Standard space registration (MNI152, etc.)
+% - Intensity normalization techniques
+% - Impact of registration accuracy on classification
+% - Trade-offs between standardization and preserving pathology
+% - Suggested references:
+% - N Garg et al. (2023) on registration methods and effects on classification
+
+\subsubsection{Impact of Preprocessing on Model Performance}
+
+% - Empirical studies measuring preprocessing effects
+% - Sensitivity analysis of different preprocessing steps
+% - Relative importance of preprocessing pipeline components
+% - Domain-specific considerations for AD
+% - Suggested references:
+% - V Viswan et al. (2025) on preprocessing effects on deep learning performance
+
+\subsubsection{Current Best Practices}
+
+% - Consensus approaches in neuroimaging literature
+% - Standardized pipelines (e.g., FreeSurfer, FSL)
+% - Preprocessing considerations specific to deep learning
+% - Areas of ongoing research and debate
+% - Suggested references:
+% - V Viswan et al. (2025) on best practices for neuroimaging preprocessing
+
+\subsubsection{Data Partitioning and Group Leakage Prevention}
+
+% - Definition of group/data leakage in neuroimaging studies
+% - Impact of subject-level vs. scan-level partitioning on reported performance
+% - Methods for proper cross-validation in longitudinal datasets
+% - Critical evaluation of published results that may suffer from leakage
+% - Suggested references:
+% - Gap: data leakage in neuroimaging studies
+% - Gap: methodological challenges in ML for neuroimaging
+% - Gap: cross-validation strategies for neuroimaging
+
+\subsection{Current State of the Art}
+
+\subsubsection{Recent Advances in Automated AD Detection}
+
+% - Leading approaches from recent literature (2020-2025)
+% - Performance breakthroughs and methodological innovations
+% - Multi-modal integration approaches
+% - Current performance benchmarks
+% - Suggested references:
+% - Francis et al. (2025), Lu et al. (2025), and Yan et al. (2025) represent recent approaches
+% - Mubonanyikuzo et al. (2025) for meta-analysis
+% - Saikia and Kalita (2024), Menagadevi et al. (2024) for reviews
+
+\subsubsection{Performance Limitations and Challenges}
+
+% - Current performance ceilings
+% - Generalizability concerns and dataset biases
+% - Challenges in cross-dataset validation
+% - Clinical integration barriers despite high reported accuracy
+% - Suggested references:
+% - Basaia et al. (2019) for established benchmarks
+% - Pradhan et al. (2024) for recent analysis
+
+\subsubsection{Research Gap Addressed by This Work}
+
+% - Synthesis of limitations in existing approaches
+% - Novelty of applying video model transfer learning
+% - Expected advantages of proposed approach
+% - Positioning your research in the current landscape
+% - Suggested references:
+% - This subsection should reference gaps identified throughout your review
+% - Connect to your specific research questions and hypotheses
 
 \section{Methodology}
 % 2,500 words
