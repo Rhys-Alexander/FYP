@@ -186,92 +186,39 @@ Word count: X,XXX   \hfill{} Dr Rickson Mesquita
 
 \subsubsection{Pathophysiology with Emphasis on Structural Changes}
 
-% - Definition, prevalence, and burden of Alzheimer's Disease
-% - Progression of pathological changes (amyloid plaques, neurofibrillary tangles)
-% - Timeline of structural vs. cognitive symptoms
-% - Regional patterns of neurodegeneration
-% - Suggested references:
-% - Vemuri et al. (2013) for relevance of MRI in early detection
-% - Jack et al. (2013) for AD pathophysiology progression models
+Alzheimer's disease pathophysiology follows a predictable cascade, beginning with amyloid $\beta$ deposition and hyperphosphorylated tau aggregation, which precede detectable structural changes~\cite{jack2013tracking}. These pathological processes ultimately manifest as progressive neurodegeneration visible on structural MRI. The hippocampus and entorhinal cortex are among the earliest affected regions, showing measurable atrophy years before clinical symptoms emerge. This atrophy pattern subsequently extends to temporal, parietal, and frontal cortices, correlating closely with cognitive decline~\cite{vemuri2010role}. Structural MRI can detect these volumetric changes with high sensitivity, providing quantitative biomarkers of disease progression that reflect underlying neuronal loss and correspond to Braak staging of neurofibrillary pathology.
 
 \subsubsection{Hippocampal Atrophy as Primary Biomarker}
 
-% - Hippocampal volume reduction patterns and progression
-% - Quantification methods and established thresholds
-% - Correlation with cognitive decline and disease progression
-% - Sensitivity and specificity as a diagnostic marker
-% - Suggested references:
-% - Vemuri et al. (2013) for hippocampal changes
-% - Cuingnet et al. (2011) for hippocampal measurement methods
-% - Jack et al (1992) for hippocampal volumetry
+Hippocampal atrophy represents one of the earliest and most established structural biomarkers in Alzheimer's disease progression~\cite{jack1992mr}. Volume reductions follow a predictable pattern, beginning years before clinical symptoms emerge, with annual atrophy rates of 3-6\% in AD compared to 1-2\% in normal aging~\cite{vemuri2010role}. Volumetric measurements correlate strongly with cognitive decline and Braak staging of neurofibrillary pathology. Standardized quantification methods include manual tracing, automated segmentation, and shape analysis, achieving diagnostic sensitivities of 80-90\% and specificities of 80-95\% in distinguishing AD from healthy controls~\cite{cuingnet2011automatic}.
 
 \subsubsection{Additional Neuroimaging Markers}
 
-% - Ventricular enlargement patterns and diagnostic value
-% - Cortical thinning in temporal, parietal, and frontal regions
-% - White matter changes and connectivity disruptions
-% - Relative sensitivity of different markers
-% - Suggested references:
-% - Vemuri et al. (2013) for multiple imaging markers
-% - L Ferrarini et al. (2006) for ventricular changes
-% - L Gutiérrez-Galve et al. (2009) on cortical thickness
+Beyond volumetric measurements, researchers have explored various neuroimaging markers for AD detection. Shape analysis methods capture morphological changes in brain structures~\cite{ferrarini2006shape}, detecting subtle deformations missed by volume alone. Texture analysis examines tissue heterogeneity patterns within brain regions. Other promising markers include cortical thickness measurements~\cite{gutierrez2009patterns}, white matter integrity via diffusion tensor imaging, functional connectivity patterns, and metabolic alterations detectable through PET imaging~\cite{vemuri2010role}. These diverse markers provide complementary information that may enhance transfer learning models' diagnostic accuracy.
 
 \subsubsection{Current Clinical Diagnostic Practices and Limitations}
 
-% - Diagnostic criteria (NINCDS-ADRDA) and workflow
-% - Multi-modal diagnostic approach (clinical, cognitive, biomarkers)
-% - Inter-reader variability in visual assessment
-% - Challenges in early and accurate detection
-% - Delay between pathological changes and clinical diagnosis
-% - Suggested references:
-% - Cuingnet et al. (2011) for diagnostic challenges
-% - jack et al. (2018) for NIA-AA guidelines
-% - B Dubois et al. (2007) for NINCDS-ADRDA
-% - Klöppel et al. (2008) on radiologist performance
+Current AD diagnosis follows NINCDS-ADRDA criteria, integrating clinical assessment, cognitive testing, and biomarker analysis~\cite{dubois2007research}. This multi-modal approach achieves improved specificity but remains limited by several factors. Visual assessment of neuroimaging suffers from significant inter-reader variability, with diagnostic accuracy dependent on radiologist expertise~\cite{cuingnet2011automatic}. A substantial temporal gap exists between initial pathological changes and clinical manifestation, complicating early intervention~\cite{jack2018nia}. Additionally, clinical diagnostic accuracy ranges from 65-96\%, with lower precision in early disease stages when intervention would be most beneficial~\cite{kloppel2008accuracy}. These limitations underscore the need for objective, automated detection methods.
 
 \subsubsection{Role of Structural MRI in Diagnosis}
 
-% - Position in diagnostic algorithm and clinical workflow
-% - Complementary role to clinical assessment and other biomarkers
-% - Accessibility advantages compared to PET and CSF markers
-% - Limitations of visual/manual assessment
-% - Suggested references:
-% - Vemuri et al. (2013) covers comprehensive role of MRI
-% - B Dubois et al. (2007) for NINCDS-ADRDA on MRI in current diagnostic guidelines
+Structural MRI occupies a pivotal position in AD diagnostic algorithms, providing objective evidence of neurodegeneration that complements clinical assessment. Current guidelines incorporate MRI as a core diagnostic criterion, with hippocampal atrophy serving as a primary biomarker~\cite{dubois2007research}. MRI offers significant advantages over alternative biomarkers, including non-invasiveness compared to CSF sampling, absence of radiation exposure unlike PET, wider availability, and lower cost~\cite{vemuri2010role}. However, visual assessment suffers from inter-reader variability and limited sensitivity to subtle changes, with accuracy heavily dependent on radiologist expertise~\cite{kloppel2008accuracy}. These limitations underscore the need for quantitative, automated analysis approaches.
 
 \subsubsection{Advantages of T1-weighted Imaging for AD Detection}
 
-% - Optimal tissue contrast for detecting atrophy
-% - Standardized acquisition protocols (MPRAGE)
-% - Wider availability compared to specialized sequences
-% - Trade-offs with other imaging modalities
-% - Suggested references:
-% - Herrera et al. (2013) for MRI techniques in classification
+T1-weighted imaging offers optimal gray/white matter contrast that enhances visualization of atrophy patterns characteristic of AD~\cite{herrera2013classification}. The standardized MPRAGE protocol ensures consistent acquisition parameters across centers, facilitating reliable comparison and algorithm development. T1-weighted sequences are widely available in clinical settings, requiring shorter acquisition times than specialized alternatives. Additionally, these sequences provide excellent anatomical detail while minimizing motion artifacts, critical for detecting subtle volumetric changes in hippocampal and cortical regions affected early in disease progression.
 
 \subsection{Deep Learning for Medical Image Analysis}
 
 \subsubsection{Evolution from Traditional ML to Deep Learning}
 
-% - Historical progression from handcrafted features to learned representations
-% - Traditional machine learning techniques in neuroimaging
-% - Key milestones in deep learning for medical imaging
-% - Performance comparisons between approaches
-% - Suggested references:
-% - Litjens et al. (2017) for survey on deep learning in medical imaging
-% - Cuingnet et al. (2011) for earlier machine learning approaches
-% - M Bari Antoret al. (2021) for a comparative analysis of ML algorithms to predict AD
+Machine learning approaches for neuroimaging have evolved dramatically over the past decade. Early methods relied heavily on hand-crafted features and shallow classifiers such as Support Vector Machines (SVMs), requiring extensive domain knowledge for feature engineering<del>\cite{cuingnet2011automatic}. These approaches typically processed predefined regions of interest or voxel-based morphometry measurements, achieving moderate success but lacking generalizability. The shift to deep learning eliminated manual feature extraction, allowing end-to-end learning directly from volumetric data</del>\cite{litjens2017survey}. This transition has yielded substantial performance improvements, with convolutional neural networks demonstrating superior classification accuracy while requiring less preprocessing and domain expertise. The evolution reflects a fundamental shift from explicit feature definition to automatic hierarchical feature learning, particularly beneficial for capturing the subtle, distributed patterns characteristic of neurodegenerative disease.
 
 \subsubsection{2D vs. 3D Approaches for Volumetric Data}
 
-% - Fundamental differences in information extraction
-% - Trade-offs between slice-based and volumetric analysis
-% - Memory and computational considerations
-% - Information loss in 2D vs. implementation complexity in 3D
-% - Suggested references:
-% - Gunawardena et al. (2017) for CNNs on AD in structural mri 
-% - Yang et al. (2021) for dimensionality considerations
-% - Payan and Montana (2015) for early 3D CNN work
-% - Sarraf and Tofighi (2016) and Liang et al. (2021) for 2D approaches
+\subsubsection{2D vs. 3D Approaches for Volumetric Data}
+
+The analysis of volumetric MRI data presents a fundamental trade-off between 2D and 3D approaches. Two-dimensional methods process brain scans as independent slices, offering computational efficiency and leveraging established architectures pretrained on natural images<del>\cite{liang2021alzheimer}. However, these approaches inevitably lose spatial context between slices, potentially missing subtle 3D patterns crucial for AD detection</del>\cite{gunawardena2017applying}. Conversely, 3D CNNs preserve volumetric relationships and capture the entire spatial context of atrophy patterns, but require substantially more parameters and memory~\cite{yang2021reinventing}. This computational burden often necessitates downsampling, particularly in resource-constrained environments, creating a direct trade-off between spatial resolution and contextual information preservation.
 
 \subsubsection{Transfer Learning in Medical Imaging}
 
