@@ -11,7 +11,7 @@
   - Regional patterns of neurodegeneration
 - **Suggested references:**
   - Teipel et al. (2013) for relevance of MRI in early detection
-  - **Gap:** Add references on AD pathophysiology progression models (e.g., Jack et al. progression model)
+  - Jack et al. for AD pathophysiology progression models
 
 ### 1.2 Hippocampal Atrophy as Primary Biomarker
 
@@ -23,7 +23,7 @@
 - **Suggested references:**
   - Teipel et al. (2013) for hippocampal changes
   - Cuingnet et al. (2011) for hippocampal measurement methods
-  - **Gap:** Add specialized references on hippocampal volumetry
+  - Jack et al (1992) for hippocampal volumetry
 
 ### 1.3 Additional Neuroimaging Markers
 
@@ -34,7 +34,8 @@
   - Relative sensitivity of different markers
 - **Suggested references:**
   - Teipel et al. (2013) for multiple imaging markers
-  - **Gap:** Add references on cortical thickness and ventricular changes
+  - L Ferrarini et al. (2006) for ventricular changes
+  - L Gutiérrez-Galve et al. (2009) on cortical thickness
 
 ### 1.4 Current Clinical Diagnostic Practices and Limitations
 
@@ -46,7 +47,9 @@
   - Delay between pathological changes and clinical diagnosis
 - **Suggested references:**
   - Cuingnet et al. (2011) for diagnostic challenges
-  - **Gap:** Add references on clinical diagnostic guidelines (e.g., NIA-AA guidelines) and radiologist performance
+  - jack et al. (2018) for NIA-AA guidelines
+  - B Dubois et al. (2007) for NINCDS-ADRDA
+  - Klöppel et al. (2008) on radiologist performance
 
 ### 1.5 Role of Structural MRI in Diagnosis
 
@@ -57,7 +60,7 @@
   - Limitations of visual/manual assessment
 - **Suggested references:**
   - Teipel et al. (2013) covers comprehensive role of MRI
-  - **Gap:** Add references on MRI in current diagnostic guidelines
+  - B Dubois et al. (2007) for NINCDS-ADRDA on MRI in current diagnostic guidelines
 
 ### 1.6 Advantages of T1-weighted Imaging for AD Detection
 
@@ -68,7 +71,6 @@
   - Trade-offs with other imaging modalities
 - **Suggested references:**
   - Herrera et al. (2013) for MRI techniques in classification
-  - **Gap:** Add technical references on T1-weighted sequence advantages
 
 ## 2. Deep Learning for Medical Image Analysis
 
@@ -82,7 +84,7 @@
 - **Suggested references:**
   - Litjens et al. (2017) for survey on deep learning in medical imaging
   - Cuingnet et al. (2011) for earlier machine learning approaches
-  - **Gap:** Add references on traditional ML methods specifically for AD
+  - M Bari Antoret al. (2021) for a comparative analysis of ML algorithms to predict AD
 
 ### 2.2 2D vs. 3D Approaches for Volumetric Data
 
@@ -108,6 +110,7 @@
   - Maqsood et al. (2019) and Wu et al. (2022) for 3D transfer learning
   - Mehmood et al. (2021) for early diagnosis applications
   - Francis et al. (2025) for attention mechanisms with transfer learning
+  - A Ebrahimi et al. (2020) on a practically indistinguishable project to mine
 
 ### 2.4 Challenges in Deep Learning for Medical Imaging
 
@@ -118,7 +121,7 @@
   - Privacy and ethical considerations
 - **Suggested references:**
   - Litjens et al. (2017) for broad challenges
-  - **Gap:** Add references specifically addressing neuroimaging challenges
+  - C Davatzikos et al. (2019) for ML neuroimaging challenges
 
 ## 3. 3D Deep Learning Architectures
 
@@ -132,7 +135,7 @@
 - **Suggested references:**
   - Payan and Montana (2015) for early implementations
   - Wu et al. (2022) for 3D transfer learning networks
-  - **Gap:** Add references on 3D ResNet implementations and optimizations
+  - A Ebrahimi et al. (2020) on 3D ResNet implementations and optimizations
 
 ### 3.2 Vision Transformers for Volumetric Data
 
@@ -142,6 +145,7 @@
   - Performance comparisons with CNN-based approaches
   - Advantages and limitations for neuroimaging
 - **Suggested references:**
+  - Y Lyu et al. (2022) for AD vision transformers
   - Lu et al. (2025) for efficient vision transformers
   - Yan et al. (2025) for hybrid ResNet-ViT approach
   - Mubonanyikuzo et al. (2025) for systematic review
@@ -154,8 +158,8 @@
   - Temporal vs. spatial dimension modeling
   - Transfer learning strategies from video domains
 - **Suggested references:**
-  - **Gap:** Add references on video classification models adapted to medical imaging
-  - **Gap:** Add papers on temporal/spatial modeling strategies
+  - A Ebrahimi et al. (2020) on a practically indistinguishable project to mine
+  - D Tran et al. (2018) on temporal/spatial modeling strategies plus resnet mc, 2+1, and normal
 
 ### 3.4 Performance Comparisons from Existing Literature
 
@@ -167,7 +171,7 @@
 - **Suggested references:**
   - Cuingnet et al. (2011) for early benchmarking
   - Basaia et al. (2019) for more recent comparisons
-  - **Gap:** Add updated comparative studies from 2020 onwards
+  - N Garg et al. (2023) updated comparative study
 
 ## 4. MRI Preprocessing for Deep Learning
 
@@ -179,7 +183,8 @@
   - Quality considerations and failure modes
   - Impact on downstream classification performance
 - **Suggested references:**
-  - **Gap:** Add references on skull stripping methods and their impact
+  - A Hoopes et al. (2022) on synthstrip
+  - A Fatima et al. (2020) on skull stripping methods and their impact
 
 ### 4.2 Registration and Normalization Approaches
 
@@ -189,7 +194,7 @@
   - Impact of registration accuracy on classification
   - Trade-offs between standardization and preserving pathology
 - **Suggested references:**
-  - **Gap:** Add references on registration methods and effects on classification
+  - - N Garg et al. (2023) on registration methods and effects on classification
 
 ### 4.3 Impact of Preprocessing on Model Performance
 
@@ -199,7 +204,7 @@
   - Relative importance of preprocessing pipeline components
   - Domain-specific considerations for AD
 - **Suggested references:**
-  - **Gap:** Add studies measuring preprocessing effects on deep learning performance
+  - V Viswan et al. (2025) on preprocessing effects on deep learning performance
 
 ### 4.4 Current Best Practices
 
@@ -209,7 +214,19 @@
   - Preprocessing considerations specific to deep learning
   - Areas of ongoing research and debate
 - **Suggested references:**
-  - **Gap:** Add references establishing best practices for neuroimaging preprocessing
+  - V Viswan et al. (2025) on best practices for neuroimaging preprocessing
+
+### 4.5 Data Partitioning and Group Leakage Prevention
+
+- **Key points to cover:**
+  - Definition of group/data leakage in neuroimaging studies
+  - Impact of subject-level vs. scan-level partitioning on reported performance
+  - Methods for proper cross-validation in longitudinal datasets
+  - Critical evaluation of published results that may suffer from leakage
+- **Suggested references:**
+  - **Gap** data leakage in neuroimaging studies
+  - **Gap** methodological challenges in ML for neuroimaging
+  - **Gap** cross-validation strategies for neuroimaging
 
 ## 5. Current State of the Art
 
@@ -235,7 +252,6 @@
 - **Suggested references:**
   - Basaia et al. (2019) for established benchmarks
   - Pradhan et al. (2024) for recent analysis
-  - **Gap:** Add references discussing clinical translation limitations
 
 ### 5.3 Research Gap Addressed by This Work
 
@@ -247,17 +263,6 @@
 - **Suggested references:**
   - This section should reference gaps identified throughout your review
   - Connect to your specific research questions and hypotheses
-
-## Bibliography Gaps to Address
-
-1. **Pathophysiology**: Add references on AD progression models and cellular-to-structural changes
-2. **Radiologist performance**: Include studies on expert performance and variability in MRI assessment
-3. **Clinical guidelines**: Add papers on current diagnostic criteria and clinical workflows
-4. **Preprocessing**: Find references on skull stripping and registration methods specific to AD
-5. **Video models**: Seek papers on video classification models adapted to medical volumetric data
-6. **Clinical translation**: Include references discussing challenges in translating research to practice
-7. **Standardized pipelines**: Add references on established preprocessing approaches in neuroimaging
-8. **3D ResNet**: Find papers specifically on 3D ResNet implementations for medical imaging
 
 ## Writing Guidelines
 
