@@ -234,37 +234,15 @@ Deep learning approaches for medical imaging face several distinct challenges co
 
 \subsubsection{Vision Transformers for Volumetric Data}
 
-% - Adaptation of transformer architectures to 3D medical data
-% - Self-attention mechanisms for spatial context
-% - Performance comparisons with CNN-based approaches
-% - Advantages and limitations for neuroimaging
-% - Suggested references:
-% - Y Lyu et al. (2022) for AD vision transformers
-% - Lu et al. (2025) for efficient vision transformers
-% - Yan et al. (2025) for hybrid ResNet-ViT approach
-% - Francis et al. (2025) for volumetric transformer applications
-% - Mubonanyikuzo et al. (2025) for systematic review
+Vision Transformers (ViTs) have been adapted to volumetric medical imaging by extending self-attention mechanisms to capture 3D spatial relationships critical for neuroanatomical analysis \cite{lyu2022classification}. Yan et al. demonstrated that hybrid architectures combining CNN and transformer components (Hybrid-RViT) leverage both local feature extraction and global context modeling, outperforming pure CNN or transformer approaches for Alzheimer's detection \cite{yan2025hybrid}. Despite their capacity to model long-range dependencies across brain regions, volumetric transformers face computational challenges due to quadratic complexity with input size. Recent efficient transformer variants address these limitations through sparse attention patterns and hierarchical designs \cite{lu2025efficient}, enabling practical application to high-resolution MRI without prohibitive memory requirements. These architectures show particular promise for detecting subtle, distributed neurodegenerative patterns characteristic of early AD.
 
 \subsubsection{Video Classification Models and Medical Adaptation}
 
-% - Parallels between video sequences and volumetric medical data
-% - Key video architectures (MC13, R(2+1)D, r3d_18, etc.)
-% - Temporal vs. spatial dimension modeling
-% - Transfer learning strategies from video domains
-% - Suggested references:
-% - A Ebrahimi et al. (2020) on a practically indistinguishable project to mine
-% - D Tran et al. (2018) on temporal/spatial modeling strategies plus resnet mc, 2+1, and normal
+The conceptual similarity between video sequences and volumetric medical data enables innovative transfer learning approaches. In videos, the temporal dimension captures motion patterns, while in 3D MRI, the depth dimension encodes crucial spatial relationships \cite{tran2018closer}. Several architectures exploit this parallelism: MC3 (Mixed Convolution 3D) employs 3D convolutions in early layers with 2D convolutions later; R(2+1)D factorizes 3D convolutions into separate spatial (2D) and temporal (1D) components, increasing non-linearities; and r3d\_18 applies full 3D convolutions throughout \cite{ebrahimi2020introducing}. These models, pre-trained on large video datasets like Kinetics-400, can be fine-tuned for MRI classification by treating the axial dimension as analogous to time, effectively leveraging motion-sensitive features for detecting subtle structural brain changes \cite{ebrahimi2020introducing, tran2018closer}.
 
 \subsubsection{Performance Comparisons from Existing Literature}
 
-% - Benchmark results across architecture types
-% - Standardized datasets and evaluation metrics
-% - Computational efficiency vs. accuracy trade-offs
-% - Memory requirements considerations
-% - Suggested references:
-% - Cuingnet et al. (2011) for early benchmarking
-% - Basaia et al. (2019) for more recent comparisons
-% - N Garg et al. (2023) updated comparative study
+Benchmark studies show considerable variation in reported performance metrics for AD classification. Cuingnet et al.'s seminal comparison of ten methods demonstrated sensitivity ranging from 67-81\% and specificity from 68-95\% for AD versus controls using the ADNI dataset \cite{cuingnet2011automatic}. More recent deep learning approaches report substantially higher accuracy (85-98\%), with 3D CNN architectures generally outperforming 2D approaches \cite{basaia2019automated, garg2023review}. However, critical methodological analyses have revealed that many studies suffer from data leakage through scan-level rather than subject-level partitioning, potentially inflating performance by 10-15\% \cite{davatzikos2019machine}. Computational requirements vary dramatically, with full 3D architectures requiring 5-10× more memory than 2D slice-based approaches but achieving superior diagnostic accuracy when properly validated.
 
 \subsection{MRI Preprocessing for Deep Learning}
 
