@@ -248,22 +248,11 @@ Benchmark studies show considerable variation in reported performance metrics fo
 
 \subsubsection{Skull Stripping Methodologies}
 
-% - Importance for AD classification
-% - Comparison of traditional vs. learning-based (synthstrip) approaches
-% - Quality considerations and failure modes
-% - Impact on downstream classification performance
-% - Suggested references:
-% - A Hoopes et al. (2022) on synthstrip
-% - A Fatima et al. (2020) on skull stripping methods and their impact
+Skull stripping, the isolation of brain tissue from surrounding non-brain structures, represents a critical preprocessing step for MRI-based AD classification. Traditional approaches include intensity-based thresholding, morphological operations, and atlas-based methods, each with distinct limitations in handling anatomical variability and pathological atrophy patterns characteristic of AD \cite{fatima2020state}. Learning-based approaches like SynthStrip demonstrate superior robustness across imaging protocols and pathological conditions by leveraging synthetic training data augmentation \cite{hoopes2022synthstrip}. SynthStrip particularly excels with neurodegenerative cases, where traditional methods often fail due to enlarged ventricles and cortical atrophy affecting intensity gradients at brain boundaries. Effective skull stripping significantly impacts downstream classification performance by eliminating confounding signals from non-brain tissue and enhancing feature extraction precision for key atrophy indicators.
 
 \subsubsection{Registration and Normalization Approaches}
 
-% - Standard space registration (MNI152, etc.)
-% - Intensity normalization techniques
-% - Impact of registration accuracy on classification
-% - Trade-offs between standardization and preserving pathology
-% - Suggested references:
-% - N Garg et al. (2023) on registration methods and effects on classification
+Registration to standardized templates (e.g., MNI152) serves to normalize anatomical variability, facilitating voxel-wise comparisons across subjects \cite{garg2023review}. This process addresses inherent differences in brain size, shape, and orientation through affine transformations and nonlinear warping. However, registration presents a fundamental trade-off between anatomical standardization and preservation of pathology-specific features. While normalization can improve model interpretability by establishing spatial correspondence \cite{viswan2025enhancing}, excessive regularization risks attenuating the volumetric changes that characterize AD. Intensity normalization complements spatial registration by addressing scanner-specific variations, with Z-score normalization particularly effective for deep learning applications by constraining gradient magnitudes during training \cite{viswan2025enhancing}.
 
 \subsubsection{Impact of Preprocessing on Model Performance}
 
