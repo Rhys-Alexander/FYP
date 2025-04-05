@@ -216,32 +216,15 @@ Machine learning approaches for neuroimaging have evolved dramatically over the 
 
 \subsubsection{2D vs. 3D Approaches for Volumetric Data}
 
-\subsubsection{2D vs. 3D Approaches for Volumetric Data}
-
-The analysis of volumetric MRI data presents a fundamental trade-off between 2D and 3D approaches. Two-dimensional methods process brain scans as independent slices, offering computational efficiency and leveraging established architectures pretrained on natural images<del>\cite{liang2021alzheimer}. However, these approaches inevitably lose spatial context between slices, potentially missing subtle 3D patterns crucial for AD detection</del>\cite{gunawardena2017applying}. Conversely, 3D CNNs preserve volumetric relationships and capture the entire spatial context of atrophy patterns, but require substantially more parameters and memory~\cite{yang2021reinventing}. This computational burden often necessitates downsampling, particularly in resource-constrained environments, creating a direct trade-off between spatial resolution and contextual information preservation.
+The analysis of volumetric MRI data presents a fundamental trade-off between 2D and 3D approaches. Two-dimensional methods process brain scans as independent slices, offering computational efficiency and leveraging established architectures pretrained on natural images<del>\cite{liang2021alzheimer, sarraf2016classification}. However, these approaches inevitably lose spatial context between slices, potentially missing subtle 3D patterns crucial for AD detection</del>\cite{gunawardena2017applying}. Conversely, 3D CNNs preserve volumetric relationships and capture the entire spatial context of atrophy patterns<del>\cite{payan2015predicting}, but require substantially more parameters and memory</del>\cite{yang2021reinventing}. This computational burden often necessitates downsampling, particularly in resource-constrained environments, creating a direct trade-off between spatial resolution and contextual information preservation.
 
 \subsubsection{Transfer Learning in Medical Imaging}
 
-% - Definition and rationale for transfer learning
-% - Domain shift challenges between natural images and medical imaging
-% - Pre-training strategies (natural images vs. medical domain) and layer freezing approaches
-% - Previous successes in neuroimaging applications
-% - Suggested references:
-% - Hon and Khan (2017), Ebrahimi-Ghahnavieh et al. (2019), Acharya et al. (2021) for transfer learning for AD
-% - Maqsood et al. (2019) and Wu et al. (2022) for 3D transfer learning
-% - Mehmood et al. (2021) for early diagnosis applications
-% - Francis et al. (2025) for attention mechanisms with transfer learning
-% - A Ebrahimi et al. (2020) on a practically indistinguishable project to mine
+Transfer learning addresses the data scarcity challenge in medical imaging by leveraging knowledge from models pretrained on large datasets \cite{hon2017towards}. This approach is particularly valuable for neuroimaging applications where annotated data is limited \cite{ebrahimi2019transfer}. When applying transfer learning to medical domains, researchers must navigate significant domain shifts between natural images and medical scans, as features relevant for classification differ substantially \cite{mehmood2021transfer}. Strategies include freezing early layers to retain low-level feature extraction capabilities while fine-tuning deeper layers for domain-specific patterns \cite{acharya2021alzheimer}. For Alzheimer's detection, transfer learning from ImageNet pretrained models has demonstrated success with both 2D slice-based approaches \cite{hon2017towards,maqsood2019transfer} and 3D volumetric techniques \cite{ebrahimi2020introducing}. Recent work extends this paradigm by exploring transfer from video classification models, exploiting architectural similarities between temporal video dimensions and the spatial depth dimension in volumetric MRI \cite{wu20223d}.
 
 \subsubsection{Challenges in Deep Learning for Medical Imaging}
 
-% - Data scarcity and class imbalance issues
-% - Interpretability requirements in clinical context
-% - Validation challenges and risks of overfitting
-% - Privacy and ethical considerations
-% - Suggested references:
-% - Litjens et al. (2017) for broad challenges
-% - C Davatzikos et al. (2019) for ML neuroimaging challenges
+Deep learning approaches for medical imaging face several distinct challenges compared to natural image analysis. Chief among these is data scarcity, with medical datasets typically orders of magnitude smaller than natural image collections like ImageNet \cite{litjens2017survey}. This limitation is exacerbated in neuroimaging where patient cohorts are smaller and annotation requires specialized expertise. Class imbalance presents another obstacle, particularly in Alzheimer's datasets where diagnostic categories are often unevenly distributed. Clinical deployment demands model interpretability beyond accuracy metrics alone, as clinicians require transparency in decision-making processes. Finally, validation protocols in neuroimaging require particular attention to prevent data leakage through subject-level rather than scan-level partitioning, an issue frequently overlooked in published studies \cite{litjens2017survey}.
 
 \subsection{3D Deep Learning Architectures}
 
@@ -266,6 +249,7 @@ The analysis of volumetric MRI data presents a fundamental trade-off between 2D 
 % - Y Lyu et al. (2022) for AD vision transformers
 % - Lu et al. (2025) for efficient vision transformers
 % - Yan et al. (2025) for hybrid ResNet-ViT approach
+% - Francis et al. (2025) for volumetric transformer applications
 % - Mubonanyikuzo et al. (2025) for systematic review
 
 \subsubsection{Video Classification Models and Medical Adaptation}
