@@ -276,35 +276,23 @@ Unfortunately, many published neuroimaging studies fail to clearly report their 
 
 \subsubsection{Recent Advances in Automated AD Detection}
 
-% - Leading approaches from recent literature (2020-2025)
-% - Performance breakthroughs and methodological innovations
-% - Multi-modal integration approaches
-% - Current performance benchmarks
-% - Suggested references:
-% - Farooq et al. (2017) for a leading approach
-% - Francis et al. (2025), Lu et al. (2025), and Yan et al. (2025), A Ebrahimi et al. (2020) represent recent approaches
-% - Mubonanyikuzo et al. (2025) for meta-analysis
-% - Saikia and Kalita (2024), Menagadevi et al. (2024) for reviews
+Recent years have witnessed significant progress in automated Alzheimer's disease detection using deep learning approaches. Convolutional neural networks have emerged as the dominant methodology, with 3D architectures demonstrating superior performance by preserving volumetric relationships critical for detecting subtle atrophy patterns. An early benchmark with a 4-way classification approach achieved 98.8\% accuracy using 2D CNN ensembles~\cite{farooq2017deep}. More recently, transfer learning to 3D ResNet-18 was introduced, leveraging pre-trained weights to achieve 98.5\% accuracy despite limited training data~\cite{ebrahimi2020introducing}.
+
+Vision Transformers (ViTs) represent the newest architectural innovation, with hybrid CNN-transformer models demonstrating state-of-the-art performance by combining local feature extraction with global context modeling. Current performance benchmarks for binary AD classification range from 85-99\% accuracy, with 3D approaches consistently outperforming 2D counterparts~\cite{saikia2024alzheimer,mubonanyikuzo2025detection}.
+
+Multi-modal integration approaches combining structural MRI with PET, genetic markers, or clinical data have demonstrated incremental improvements of 2-5\% in classification performance. Despite these advances, model interpretability and cross-dataset generalizability remain significant challenges for clinical translation~\cite{menagadevi2024machine}.
 
 \subsubsection{Performance Limitations and Challenges}
 
-% - Current performance ceilings
-% - Generalizability concerns and dataset biases
-% - Challenges in cross-dataset validation
-% - Clinical integration barriers despite high reported accuracy
-% - Suggested references:
-% - Basaia et al. (2019) for established benchmarks
-% - Pradhan et al. (2024) for recent analysis
+Despite promising results, transfer learning for AD detection faces significant challenges. Data scarcity remains a primary limitation, as medical imaging datasets are typically smaller than those used in computer vision domains~\cite{pradhan2024analysis}. The heterogeneity of MRI acquisition protocols introduces variability that complicates model generalization. Adapting video classification architectures to 3D MRI data requires substantial modifications that may compromise the benefits of pre-trained weights.
+
+Class imbalance in AD datasets poses additional challenges, with early-stage cases being particularly underrepresented. The "black box" nature of deep learning models raises concerns about clinical interpretability and trustworthiness~\cite{basaia2019automated}. Furthermore, the computational demands of processing high-dimensional MRI data necessitate trade-offs between resolution and efficiency.
+
+Lastly, domain shift between source and target tasks remains problematic, potentially limiting the effectiveness of knowledge transfer from non-medical to medical imaging applications. 
 
 \subsubsection{Research Gap Addressed by This Work}
 
-% - Synthesis of limitations in existing approaches
-% - Novelty of applying video model transfer learning
-% - Expected advantages of proposed approach
-% - Positioning your research in the current landscape
-% - Suggested references:
-% - This subsection should reference gaps identified throughout your review
-% - Connect to your specific research questions and hypotheses
+Despite advances in deep learning for Alzheimer's detection, significant methodological and technical gaps remain. Current approaches often employ 2D slice-based analysis or fail to leverage transfer learning effectively for volumetric data. While conceptual similarities exist between video sequences and 3D MRI (temporal dimension paralleling spatial depth), this connection remains underexplored. Many studies suffer from methodological flaws including scan-level rather than subject-level partitioning, artificially inflating reported performance. Additionally, there is limited research on adapting architectures optimized for video classification ($r3d_18$, MC3, R2Plus1D) to neuroimaging tasks despite their promising 3D feature extraction capabilities. This work addresses these gaps by: (1) systematically evaluating video-pretrained 3D models for AD classification; (2) implementing methodologically rigorous subject-level validation; (3) developing an optimized preprocessing pipeline preserving diagnostically relevant features; and (4) comparing architectural variants to determine the optimal approach for volumetric MRI analysis while maintaining computational feasibility.
 
 \section{Methodology}
 % 2,500 words
