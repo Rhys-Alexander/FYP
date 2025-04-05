@@ -230,14 +230,7 @@ Deep learning approaches for medical imaging face several distinct challenges co
 
 \subsubsection{3D CNN Architectures (ResNet and Variants)}
 
-% - Core principles of 3D CNNs
-% - Residual learning principles applied to 3D volumes
-% - Architecture details and implementation considerations
-% - Parameter efficiency and resource requirements
-% - Suggested references:
-% - Payan and Montana (2015) for early implementations
-% - Wu et al. (2022) for 3D transfer learning networks
-% - A Ebrahimi et al. (2020) on 3D ResNet implementations and optimizations
+3D CNNs extend convolutional operations to volumetric data, preserving spatial relationships across all dimensions critical for detecting subtle neuroanatomical changes in AD \cite{ebrahimi2020introducing}. Residual networks address the vanishing gradient problem through identity shortcuts, enabling deeper architectures particularly beneficial for capturing hierarchical patterns in volumetric MRI \cite{wu20223d}. 3D ResNet-18 represents an optimal balance between depth and computational efficiency, containing 33.2M parameters compared to 46.4M in ResNet-34 \cite{ebrahimi2020introducing}. Architectural variants include MC3 (mixed 2D/3D convolutions) and R(2+1)D (factorizing 3D convolutions into spatial and temporal components) that maintain performance while reducing computational demands \cite{wu20223d}. These architectures demonstrate parameter efficiency while capturing the complex spatial patterns indicative of neurodegeneration.
 
 \subsubsection{Vision Transformers for Volumetric Data}
 
