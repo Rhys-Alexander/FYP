@@ -183,7 +183,7 @@ T1-weighted imaging offers optimal gray/white matter contrast that enhances visu
 
 \subsubsection{Evolution from Traditional ML to Deep Learning}
 
-Machine learning approaches for neuroimaging have evolved dramatically over the past decade. Early methods relied on hand-crafted features and shallow classifiers such as Support Vector Machines (SVMs), requiring extensive domain knowledge for feature engineering~\cite{cuingnet2011automatic}. These approaches typically processed predefined regions of interest, achieving moderate success but lacking generalizability. The shift to deep learning eliminated manual feature extraction, allowing end-to-end learning directly from volumetric data~\cite{litjens2017survey}. This transition has yielded substantial performance improvements, with convolutional neural networks demonstrating superior classification accuracy while requiring less preprocessing and domain expertise. The evolution reflects a fundamental shift from explicit feature definition to automatic hierarchical feature learning.
+Machine learning approaches for neuroimaging have evolved dramatically over the past decade~\cite{bari2021comparative}. Early methods relied on hand-crafted features and shallow classifiers such as Support Vector Machines (SVMs), requiring extensive domain knowledge for feature engineering~\cite{cuingnet2011automatic}. These approaches typically processed predefined regions of interest, achieving moderate success but lacking generalizability. The shift to deep learning eliminated manual feature extraction, allowing end-to-end learning directly from volumetric data~\cite{litjens2017survey}. This transition has yielded substantial performance improvements, with convolutional neural networks demonstrating superior classification accuracy while requiring less preprocessing and domain expertise. The evolution reflects a fundamental shift from explicit feature definition to automatic hierarchical feature learning.
 
 \subsubsection{2D vs. 3D Approaches for Volumetric Data}
 
@@ -221,7 +221,7 @@ Transfer learning addresses data scarcity in medical imaging by leveraging knowl
 Transfer learning strategies for medical imaging include:
 \begin{enumerate}
 \item \textbf{Natural image transfer:} Models pretrained on ImageNet are adapted to 2D medical slices~\cite{maqsood2019transfer}.
-\item \textbf{Cross-modality transfer:} Knowledge from one imaging modality is transferred to another~\cite{yang2020mri}.
+\item \textbf{Cross-modality transfer:} Knowledge from one imaging modality is transferred to another~\cite{yang2020mri, kieselmann2021cross}.
 \item \textbf{Video-to-volumetric transfer:} Models pretrained on video datasets are adapted to 3D medical volumes~\cite{wu20223d}.
 \item \textbf{Self-supervised pretraining:} Models are pretrained on unlabeled medical data using proxy tasks~\cite{tang2022self}.
 \end{enumerate}
@@ -751,7 +751,7 @@ Cross-validation reveal performance consistency across subject groupings, while 
 
 
 With all else being equal, group leakage gave a test accuracy of 97.67\%, separating the subjects in the test set from train and validation gave 79.57\% test accuracy. Complete subject isolation produced a test accuracy of 70.23\%. This demonstrates the importance of subject isolation in preventing data leakage and ensuring the model's ability to generalize to unseen individuals. The difference in accuracy highlights the potential pitfalls of group leakage in neuroimaging studies, where multiple scans from the same subject can lead to inflated performance metrics if not properly accounted for. Further improvements eventually led to a test accuracy of 77.67\% with the final model, indicating that the model was able to learn from the training data and generalize well to unseen subjects. This emphasizes the importance of using a rigorous data splitting strategy to ensure that the model is evaluated on its true performance rather than on memorization of specific subjects.
-% TODO add a figure showing the difference in accuracy with and without subject isolation
+% TODO add a figure showing the difference in accuracy with and without subject isolation, use leakage.png
 
 
 \section{Discussion}
