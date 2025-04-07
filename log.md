@@ -308,6 +308,7 @@ Also want to try XAI so I can relate it with hippocampal atrophy or not. Suggest
   - [ ] In video its timeframe but in my case in depth
   - [ ] Link relevant neurons with a specific depth of mri resolution or a feature of it
   - [ ] activation maps to visualise or gradCAM
+- [ ] look at similar paper and use it to compare
 - [ ] final eval
   - [ ] Make the comparison to the primitive 2d
   - [ ] Compare this to the state of art, can I claim that I’ve got the best?
