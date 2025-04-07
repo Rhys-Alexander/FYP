@@ -176,7 +176,7 @@ Current AD diagnosis follows NINCDS-ADRDA criteria, integrating clinical assessm
 
 \subsubsection{Role of Structural MRI and T1-weighted Imaging in Diagnosis}
 
-Structural MRI provides objective evidence of neurodegeneration that complements clinical assessment, with hippocampal atrophy serving as a primary biomarker~\cite{dubois2007research}. MRI"s advantages include non-invasiveness compared to CSF sampling, absence of radiation exposure unlike PET, wider availability, and lower cost~\cite{vemuri2010role}. However, visual assessment suffers from inter-reader variability and limited sensitivity to subtle changes, with accuracy heavily dependent on radiologist expertise~\cite{kloppel2008accuracy}. These limitations underscore the need for quantitative, automated analysis approaches.
+Structural MRI provides objective evidence of neurodegeneration that complements clinical assessment, with hippocampal atrophy serving as a primary biomarker~\cite{dubois2007research}. MRI's advantages include non-invasiveness compared to CSF sampling, absence of radiation exposure unlike PET, wider availability, and lower cost~\cite{vemuri2010role}. However, visual assessment suffers from inter-reader variability and limited sensitivity to subtle changes, with accuracy heavily dependent on radiologist expertise~\cite{kloppel2008accuracy}. These limitations underscore the need for quantitative, automated analysis approaches.
 T1-weighted imaging offers optimal gray/white matter contrast that enhances visualization of atrophy patterns characteristic of AD~\cite{herrera2013classification}. The standardized MPRAGE protocol ensures consistent acquisition parameters across centers, facilitating algorithm development. T1-weighted sequences are widely available in clinical settings, requiring shorter acquisition times than specialized alternatives while providing excellent anatomical detail for detecting subtle volumetric changes in regions affected early in disease progression.
 
 \subsection{Deep Learning for Medical Image Analysis}
@@ -482,7 +482,7 @@ A key methodological innovation was the implementation of an adaptive cropping p
 This method preserved approximately 35\% more effective resolution for critical structures like the hippocampus compared to naive downsampling. The 128³ dimension balanced preserving anatomical detail with memory constraints for model training. The original uncropped 96³ images compared to the cropped 128³ images are shown in figure \ref{fig:cropping}.
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/cropping.png}
+  \includegraphics[width=0.8\textwidth]{figures/cropping.png}
   \caption{Comparison of original 96³ (top) and cropped 128³ (bottom) images. The cropping process preserves critical anatomical features while reducing irrelevant background.}
   \label{fig:cropping}
 \end{figure}
@@ -545,7 +545,7 @@ tio.Compose([
 This approach was applied exclusively to the training set, while validation and test sets received only Z-normalization to maintain evaluation consistency. In practice I saw a 5\% improvement in test accuracy, and consistent improvement in validation accuracy as seen in figure \ref{fig:normalisation_accuracy}.
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/normalisation_accuracy.png}
+  \includegraphics[width=\textwidth]{figures/normalisation_accuracy.png}
   \caption{Validation accuracy over epochs with and without normalisation in the augmentation, demonstrating normalisations effectiveness in enhancing model generalization.}
   \label{fig:normalisation_accuracy}
 \end{figure}
