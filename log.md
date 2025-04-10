@@ -299,8 +299,7 @@ Also want to try XAI so I can relate it with hippocampal atrophy or not. Suggest
 
 - [x] mvit
   - that shit don' work unless you got 32gb of ram and even then it'smade for 16x224x224 which is very different
-- [ ] could download all the data again, process without reshaping, use MPRAGE and accel
-- [x] K-fold cross validation, if crazy diff the split understand using xml
+- [x] 3-fold cross validation, if crazy diff the split understand using xml
   - done now, got mean 77.26 mean and 2.34 sigma
 - [ ] xai
   - [ ] what its recognizing
