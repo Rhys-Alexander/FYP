@@ -543,12 +543,6 @@ tio.Compose([
 \end{verbatim}
 
 This approach was applied exclusively to the training set, while validation and test sets received only Z-normalization to maintain evaluation consistency. In practice I saw a 5\% improvement in test accuracy, and consistent improvement in validation accuracy as seen in figure \ref{fig:normalisation_accuracy}.
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\textwidth]{figures/normalisation_accuracy.png}
-  \caption{Validation accuracy over epochs with and without normalisation in the augmentation, demonstrating normalisations effectiveness in enhancing model generalization.}
-  \label{fig:normalisation_accuracy}
-\end{figure}
 
 Each technique addressed specific neuroimaging considerations: Random noise (30\% probability, $\sigma$=0.1) simulated scanner variability and promoted robustness to image quality differences; Gamma adjustment (±0.2 range, 30\% probability) mimicked contrast variations between scanners; Z-normalization standardized intensity values across all scans for consistent feature extraction.
 
@@ -825,17 +819,24 @@ The low standard deviation (2.34\%) across folds indicates robust performance in
 
 \subsubsection{Dimensional Processing Impact}
 
-A systematic comparison of different 3D architectural variants revealed a clear pattern: performance progressively declined as architectures incorporated more 2D elements. Figure \ref{fig:architecture_comparison} illustrates this comparison across three main architectural approaches.
+A systematic comparison of different 3D architectural variants revealed a clear pattern: performance progressively declined as architectures incorporated more 2D elements. Figure \ref{fig:architecture_comparison_gl} and \ref{fig:architecture_comparison} illustrates this comparison across three main architectural approaches.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figures/archs_acc_gl.png}
+  \caption{Performance comparison across architectural variants, demonstrating superior performance of fully 3D convolutional approaches (R3D-18) compared to hybrid architectures (MC3-18) and factorized convolutions (R(2+1)D-18). Note, group leakage was present in these runs, leading to inflated scores.}
+  \label{fig:architecture_comparison_gl}
+\end{figure}
+
 \begin{figure}[htbp]
   \centering
   % TODO [INSERT ACTUAL ARCHITECTURE COMPARISON FIGURE]
-  \caption{Performance comparison across architectural variants, demonstrating superior performance of fully 3D convolutional approaches (R3D-18) compared to hybrid architectures (MC3-18) and factorized convolutions (R(2+1)D-18).}
+  \caption{Performance comparison across architectural variants, demonstrating superior performance of fully 3D convolutional approaches (R3D-18) compared to hybrid architectures (MC3-18) and factorized convolutions (R(2+1)D-18). Note, no group leakage was present in these runs.}
   \label{fig:architecture_comparison}
 \end{figure}
 
-The fully 3D convolutional approach (R3D-18) consistently outperformed both the mixed convolution network (MC3-18) and the factorized convolutional approach (R(2+1)D-18), with test accuracies of xxx\%, xxx\%, and xxx\% respectively. This progression strongly suggests that preserving complete 3D spatial context is critical for effective AD classification from volumetric MRI data.
+The fully 3D convolutional approach (R3D-18) consistently outperformed both the mixed convolution network (MC3-18) and the factorized convolutional approach (R(2+1)D-18), with test accuracies of 97.67\%, 93.02\%, and 94.18\% respectively, these figures are inflated due to group leakage, after correcting for group leakage we saw test accuracies of 79.14\%, 67.63\%, and xxx\% respectively. This progression strongly suggests that preserving complete 3D spatial context is critical for effective AD classification from volumetric MRI data.
 
-% TODO add actual values to figure
+% TODO add actual r2plus1d values and figure
 
 \subsubsection{Layer Freezing Strategy Analysis}
 
@@ -888,6 +889,32 @@ The literature suggests that high-quality skull stripping is important for AD cl
   \includegraphics[width=\textwidth]{figures/ss.png}
   \caption{Example SynthStrip output.}
   \label{fig:skull_stripping_comparison}
+\end{figure}
+
+\subsection{Augmentation Effectiveness}
+
+\subsubsection{Comparative Analysis of Augmentation Strategies}
+
+Through systematic experimentation, we identified that minimal, targeted augmentation outperformed more extensive transformation sets. Figure \ref{fig:augmentation_comparison} illustrates the performance impact of different augmentation strategies.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figures/augs_train_acc.png}
+  \caption{Training accuracy performance comparison across different augmentation strategies. $tio_s$ and $tio_l$ being torchio augmentations with smaller and larger values, the augmentations include rotations, translations, random noise, gamma adjustment, and z-normalization, showing the effectiveness of minimalist approach focusing on noise, gamma adjustment, and normalization versus more extensive transformations. $tio_flip$ was $tio_s$ plus flips, and $monai$ was using similar augmentations to $tio_flip$ but using the monai library}
+  \label{fig:augmentation_comparison}
+\end{figure}
+
+The optimal strategy (random noise + gamma adjustment + Z-normalization) improved validation accuracy by approximately 5\% compared to using no augmentation, while the addition of geometric transformations (rotations, flips) not only failed to improve performance, as they all remaied within ±2\% but significantly increased training time from approximately 5 to 20 epochs for comparable convergence.
+
+\subsubsection{Normalization Impact}
+
+Z-normalization proved particularly effective, as demonstrated in Figure \ref{fig:normalisation_accuracy} which shows the consistent improvement in validation accuracy as well as a more stable convergence when normalization was included in the augmentation pipeline.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figures/znorm_val_acc.png}
+  \caption{Validation accuracy over epochs with and without normalisation in the augmentation, demonstrating normalisations effectiveness in enhancing model generalization.}
+  \label{fig:normalisation_accuracy}
 \end{figure}
 
 \section{Discussion}
