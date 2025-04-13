@@ -815,6 +815,22 @@ F1-Score & 81.05\% & 79.74\% & 70.59\% & 77.13 ± 5.70\% \\
 
 The low standard deviation (2.34\%) across folds indicates robust performance independent of specific subject allocation, supporting the generalizability of our approach to unseen individuals.
 
+\subsubsection{Learning Curve Analysis}
+
+The learning curves for the R3D-18 model over 3 folds exhibited relatively quick convergence, typically within 4-8 epochs, attributable to the transfer learning initialization. Figure \ref{fig:learning_curves} shows the characteristic progression of training and validation metrics across epochs.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.6\textwidth]{figures/3f_train_acc.png}
+  \includegraphics[width=0.6\textwidth]{figures/3f_train_loss.png}
+  \includegraphics[width=0.6\textwidth]{figures/3f_val_acc.png}
+  \includegraphics[width=0.6\textwidth]{figures/3f_val_loss.png}
+  \caption{Learning curves showing training and validation loss/accuracy across epochs for the R3D-18 model.}
+  \label{fig:learning_curves}
+\end{figure}
+
+The validation accuracy typically plateaued around epoch 5, after which the early stopping mechanism prevented overfitting by halting training when no further improvement was observed for 5 consecutive epochs.
+
 \subsection{Architectural Comparisons}
 
 \subsubsection{Dimensional Processing Impact}
