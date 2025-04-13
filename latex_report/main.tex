@@ -834,6 +834,19 @@ Z-normalization proved particularly effective, as demonstrated in Figure \ref{fi
   \label{fig:normalisation_accuracy}
 \end{figure}
 
+\subsection{Group Leakage Impact}
+
+The methodological investigation into group leakage (subject-level vs. scan-level partitioning) confirmed previous findings about inflated performance metrics. As shown in Figure \ref{fig:group_leakage}, scan-level partitioning produced artificially high accuracy (>90\%) compared to the more realistic subject-level isolation (77\%), demonstrating the critical importance of proper validation methodology in neuroimaging studies. We see one model with complete group leakage (scan-level), one with no group leakage (subject-level), and one with partial group leakage (train and val sets have some overlap). The model with complete group leakage achieved a test accuracy of 97.67\%, while the model with no group leakage achieved an accuracy of 70.28\%. The model with partial group leakage achieved an accuracy of 79.57\%.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figures/leakage.png}
+  \caption{Performance comparison between scan-level partitioning and subject-level isolation}
+  \label{fig:group_leakage}
+\end{figure}
+
+This 20-percentage-point difference highlights the critical importance of proper validation methodology in neuroimaging studies and suggests that previously published results may be significantly overestimated if they employed scan-level partitioning.
+
 \section{Discussion}
 % 2,000 words
 
