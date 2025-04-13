@@ -242,7 +242,7 @@ Validation protocols in neuroimaging require particular attention to prevent dat
 
 \subsubsection{3D CNN Architectures (ResNet and Variants)}
 
-3D CNNs extend convolutional operations to volumetric data, preserving spatial relationships across all dimensions critical for detecting subtle neuroanatomical changes in AD~\cite{ebrahimi2020introducing}. Early on, succesful 3D convolutional autoencoders for Alzheimer's classification established the value of learning hierarchical spatial features directly from volumetric data~\cite{payan2015predicting}. Residual networks address the vanishing gradient problem through identity shortcuts, enabling deeper architectures beneficial for capturing hierarchical patterns in volumetric MRI~\cite{wu20223d}. 3D ResNet-18 represents an optimal balance between depth and computational efficiency, containing 33.2M parameters compared to 46.4M in ResNet-34~\cite{ebrahimi2020introducing}. Architectural variants, compared in figure \ref{fig:cnn_architectures}, include MC3 (mixed 2D/3D convolutions) and R(2+1)D (factorizing 3D convolutions into spatial and temporal components, figure \ref{fig:2plus1D}) that maintain performance while reducing computational demands~\cite{wu20223d}.
+3D CNNs extend convolutional operations to volumetric data, preserving spatial relationships across all dimensions critical for detecting subtle neuroanatomical changes in AD~\cite{ebrahimi2020introducing}. Early on, succesful 3D convolutional autoencoders for Alzheimer's classification established the value of learning hierarchical spatial features directly from volumetric data~\cite{payan2015predicting}. Residual networks address the vanishing gradient problem through identity shortcuts, enabling deeper architectures beneficial for capturing hierarchical patterns in volumetric MRI~\cite{wu20223d}. 3D ResNet-18 represents an optimal balance between depth and computational efficiency, containing 33.2M parameters compared to 46.4M in ResNet-34~\cite{ebrahimi2020introducing}. Architectural variants, compared in figure \ref{fig:cnn_architectures}, include MC3 (mixed 2D/3D convolutions) and R(2+1)D (factorizing 3D convolutions into spatial and temporal components, figure \ref{fig:2plus1D}) that maintain performance while reducing computational demands~\cite{wu20223d}. R3D preserves full spatial context across all dimensions, while MC3 and R(2+1)D offer computational efficiency with different approaches to dimensional processing~\cite{tran2018closer}.
 
 \begin{figure}[htbp]
   \centering
@@ -254,7 +254,7 @@ Validation protocols in neuroimaging require particular attention to prevent dat
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{figures/res_net_archs.png}
-  \caption{Schematic comparison of ResNet architectures. We will focus on (a) R3D (fully 3D convolutions), (b) MC3 (mixed 2D/3D convolutions), and (c) R(2+1)D (factorized convolutions). R3D preserves full spatial context across all dimensions, while MC3 and R(2+1)D offer computational efficiency with different approaches to dimensional processing~\cite{tran2018closer}.}
+  \caption{Schematic comparison of ResNet architectures. We will focus on (a) R3D (fully 3D convolutions), (b) MC3 (mixed 2D/3D convolutions), and (c) R(2+1)D (factorized convolutions)~\cite{tran2018closer}.}
   \label{fig:cnn_architectures}
 \end{figure}
 
@@ -371,64 +371,9 @@ Despite advances in deep learning for Alzheimer's detection, several key methodo
 \end{enumerate}
 
 These research gaps directly inform the methodology in the next section, which implements a rigorous experimental framework to evaluate video-pretrained model transfer for Alzheimer's disease detection.
+
 \section{Methodology}
 % 2,500 words
-
-% - **Data Acquisition and Characteristics**
-
-%   - ADNI dataset description and selection criteria
-%   - Patient demographics and diagnostic criteria
-%   - MRI acquisition parameters (focusing on T1w MPRAGE)
-%   - Data distribution analysis (balance, demographics)
-
-% - **Comprehensive Preprocessing Pipeline**
-
-%   - DICOM to NIfTI conversion
-%   - Skull stripping using SynthStrip (justification over alternatives)
-%   - Voxel standardization to 1×1×1mm
-%   - Cropping and reshaping strategy (128×128×128)
-%   - Bias field correction and orientation standardization
-%   - Rationale for omitting spatial normalization
-
-% - **Data Splitting Strategy**
-
-%   - Subject-level splitting methodology
-%   - Round-robin approach for balanced distribution
-%   - Final distribution statistics (subjects and scans per split)
-%   - Prevention of data leakage concerns
-
-% - **Data Augmentation**
-
-%   - Augmentation techniques implemented
-%   - Justification for chosen techniques
-%   - Impact on model generalization
-
-% - **Model Architectures**
-
-%   - 3D ResNet, r3d18, architecture details
-%   - Transfer learning from Kinetics400 pre-training
-%   - Layer freezing strategy with rationale
-%   - Alternative architectures explored - MC318
-%   - MViT investigation and memory constraint challenges
-%   - Parameter counts and computational considerations
-%   - Implementation details - PyTorch, Weights \& Biases
-
-% - **Training Framework and Implementation**
-
-%   - PyTorch implementation with Weights \& Biases integration
-%   - Hyperparameter selection process
-%   - batch size
-%   - Early stopping criteria
-%   - Loss function (weighted cross-entropy) and optimization strategy
-%   - Learning rate scheduling approach
-%   - Hardware configuration and constraints
-%   - Computational optimizations attempted
-
-% - **Evaluation Methodology**
-%   - Classification metrics selection and justification
-%   - Validation strategy
-%   - Statistical analysis approach
-%   - Cross-validation approach
 
 \subsection{Data Acquisition and Characteristics}
 
@@ -699,50 +644,6 @@ Cross-validation reveal performance consistency across subject groupings, while 
 \section{Results}
 % 2,000 words
 
-% - **Overall Performance Metrics**
-
-%   - Classification accuracy, precision, recall, F1-score
-%   - ROC curves and AUC analysis
-%   - Confusion matrices and interpretation
-%   - k fold Cross-validation results and stability analysis
-%   - Statistical significance testing
-%   - Benchmarking against literature results
-%   - Bayesian analysis on representative populations
-
-% - **Architectural Comparisons**
-
-%   - 3D ResNet vs. Mixed Convolution vs 2plus1D performance
-%   - Impact of layer freezing strategies
-%   - Parameter efficiency analysis
-
-% - **Preprocessing Impact Analysis**
-
-%   - Effect of different preprocessing steps
-%   - Importance of crop-and-reshape vs. simple interpolation
-%   - Impact of skull stripping quality
-
-% - **Augmentation Effectiveness**
-
-%   - Comparative analysis of different augmentation strategies
-%   - Quantitative impact on model performance
-
-% - **Training Dynamics**
-
-%   - Learning curves analysis
-%   - Convergence patterns
-%   - Overfitting observations and mitigations
-
-% - **Error Analysis**
-
-%   - Patterns in misclassifications
-%   - Subject-level vs. scan-level errors
-%   - Potential confounding factors
-
-% - **Visual Results**
-%   - Key visualizations from Weights \& Biases
-%   - Representative case studies
-%   - Visualization of model attention/activation maps XAI
-
 This section presents the quantitative and qualitative results of the proposed transfer learning approach for Alzheimer's disease detection using pre-trained video classification models adapted to MRI analysis. The results demonstrate the effectiveness of 3D convolutional architectures, particularly the R3D-18 model, for identifying structural patterns associated with AD.
 
 \subsection{Overall Performance Metrics}
@@ -781,12 +682,12 @@ The confusion matrix in Figure \ref{fig:confusion_matrix} shows the distribution
 
 \subsubsection{ROC Analysis}
 
-The Receiver Operating Characteristic (ROC) curve in Figure \ref{fig:roc_curve} illustrates the performance of the model across different classification thresholds, with an Area Under the Curve (AUC) of 0.86, indicating good discriminative ability between AD and CN subjects.
+The Receiver Operating Characteristic (ROC) curve in Figure \ref{fig:roc_curve} demonstrates the trade-off between true positive rate and false positive rate across different classification thresholds. With an Area Under the Curve (AUC) of 0.86, it indicates good discriminative ability between AD and CN subjects.
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{figures/ROC3F.png}
-  \caption{ROC curve for the R3D-18 model on the held out test set over 3 folds, demonstrating the trade-off between true positive rate and false positive rate across different classification thresholds. The Area Under the Curve (AUC) is 0.86.}
+  \caption{ROC curve for the R3D-18 model on the held out test set over 3 folds. The Area Under the Curve (AUC) is 0.86.}
   \label{fig:roc_curve}
 \end{figure}
 
@@ -911,12 +812,12 @@ The literature suggests that high-quality skull stripping is important for AD cl
 
 \subsubsection{Comparative Analysis of Augmentation Strategies}
 
-Through systematic experimentation, we identified that minimal, targeted augmentation outperformed more extensive transformation sets. Figure \ref{fig:augmentation_comparison} illustrates the performance impact of different augmentation strategies.
+Through systematic experimentation, it was identified that minimal, targeted augmentation outperformed more extensive transformation sets. Figure \ref{fig:augmentation_comparison} illustrates the performance impact of different augmentation strategies. $tio_s$ and $tio_l$ being torchio augmentations with smaller and larger values, the augmentations include rotations, translations, random noise, gamma adjustment, and z-normalization, showing the effectiveness of minimalist approach focusing on noise, gamma adjustment, and normalization versus more extensive transformations. $tio_flip$ was $tio_s$ plus flips, and $monai$ was using similar augmentations to $tio_flip$ but using the monai library.
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{figures/augs_train_acc.png}
-  \caption{Training accuracy performance comparison across different augmentation strategies. $tio_s$ and $tio_l$ being torchio augmentations with smaller and larger values, the augmentations include rotations, translations, random noise, gamma adjustment, and z-normalization, showing the effectiveness of minimalist approach focusing on noise, gamma adjustment, and normalization versus more extensive transformations. $tio_flip$ was $tio_s$ plus flips, and $monai$ was using similar augmentations to $tio_flip$ but using the monai library}
+  \caption{Training accuracy performance comparison across different augmentation strategies.}
   \label{fig:augmentation_comparison}
 \end{figure}
 
