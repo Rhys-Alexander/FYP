@@ -736,7 +736,9 @@ The validation accuracy typically plateaued around epoch 5, after which the earl
 
 \subsubsection{Dimensional Processing Impact}
 
-A systematic comparison of different 3D architectural variants revealed a clear pattern: performance progressively declined as architectures incorporated more 2D elements. Figure \ref{fig:architecture_comparison_gl} and \ref{fig:architecture_comparison} illustrates this comparison across three main architectural approaches.
+A systematic comparison of different 3D architectural variants revealed a clear pattern: performance progressively declined as architectures incorporated more 2D elements. Figure \ref{fig:architecture_comparison_gl} illustrates this comparison across three main architectural approaches.
+% A systematic comparison of different 3D architectural variants revealed a clear pattern: performance progressively declined as architectures incorporated more 2D elements. Figure \ref{fig:architecture_comparison_gl} and \ref{fig:architecture_comparison} illustrates this comparison across three main architectural approaches.
+
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{figures/archs_acc_gl.png}
@@ -744,15 +746,16 @@ A systematic comparison of different 3D architectural variants revealed a clear 
   \label{fig:architecture_comparison_gl}
 \end{figure}
 
-\begin{figure}[htbp]
-  \centering
-  % TODO [INSERT ACTUAL ARCHITECTURE COMPARISON FIGURE]
-  \caption{Performance comparison across architectural variants, demonstrating superior performance of fully 3D convolutional approaches (R3D-18) compared to hybrid architectures (MC3-18) and factorized convolutions (R(2+1)D-18). Note, no group leakage was present in these runs.}
-  \label{fig:architecture_comparison}
-\end{figure}
+% \begin{figure}[htbp]
+%   \centering
+%   % TODO [INSERT ACTUAL ARCHITECTURE COMPARISON FIGURE]
+%   \caption{Performance comparison across architectural variants, demonstrating superior performance of fully 3D convolutional approaches (R3D-18) compared to hybrid architectures (MC3-18) and factorized convolutions (R(2+1)D-18). Note, no group leakage was present in these runs.}
+%   \label{fig:architecture_comparison}
+% \end{figure}
 
-The fully 3D convolutional approach (R3D-18) consistently outperformed both the mixed convolution network (MC3-18) and the factorized convolutional approach (R(2+1)D-18), with test accuracies of 97.67\%, 93.02\%, and 94.18\% respectively, these figures are inflated due to group leakage, after correcting for group leakage we saw test accuracies of 79.14\%, 67.63\%, and xxx\% respectively. This progression strongly suggests that preserving complete 3D spatial context is critical for effective AD classification from volumetric MRI data.
+The fully 3D convolutional approach (R3D-18) consistently outperformed both the mixed convolution network (MC3-18) and the factorized convolutional approach (R(2+1)D-18), with test accuracies of 97.67\%, 93.02\%, and 94.18\% respectively; these figures are inflated due to group leakage. This progression strongly suggests that preserving complete 3D spatial context is critical for effective AD classification from volumetric MRI data.
 
+% after correcting for group leakage we saw test accuracies of 79.14\%, 67.63\%, and xxx\% respectively.
 % TODO add actual r2plus1d values and figure
 
 \subsubsection{Layer Freezing Strategy Analysis}
@@ -846,6 +849,34 @@ The methodological investigation into group leakage (subject-level vs. scan-leve
 \end{figure}
 
 This 20-percentage-point difference highlights the critical importance of proper validation methodology in neuroimaging studies and suggests that previously published results may be significantly overestimated if they employed scan-level partitioning.
+
+\subsection{Computational Performance Analysis}
+
+Training on a consumer-grade M1 Mac using Metal Performance Shaders demonstrated both the feasibility and challenges of developing deep learning models for neuroimaging on accessible hardware. Table \ref{tab:computational_performance} summarizes the computational characteristics of different architectures.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Architecture} & \textbf{Training Time/Epoch} & \textbf{Memory Usage} \\
+\hline
+R3D-18 & ~1 hour & 7.5 GB \\
+\hline
+MC3-18 & ~4 hours & 7.6 GB \\
+\hline
+R(2+1)D-18 & ~5 hours & 7.4 GB \\
+\hline
+MViT & Failed (OOM) & >32 GB (estimated) \\
+\hline
+\end{tabular}
+\caption{Computational performance metrics for different model architectures.}
+\label{tab:computational_performance}
+\end{table}
+
+Despite optimization attempts (mixed precision, layer optimization, batch size tuning), the forward pass remained the primary bottleneck in the training process. The memory constraints also prevented exploration of larger transformer-based architectures like MViT, which required an estimated >32GB of memory for the 128³ input volumes.
+
+\subsection{Explicable AI}
+% TODO Visualization of model attention/activation maps XAI
 
 \section{Discussion}
 % 2,000 words
