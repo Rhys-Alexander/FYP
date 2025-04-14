@@ -509,7 +509,7 @@ The model architecture consisted of 18 layers, with the first layer being a 3D c
 
 \subsubsection{Transfer Learning Strategy}
 
-We implemented a selective transfer learning approach, freezing early convolutional layers (25\% of parameters) while allowing the final residual block and fully connected layer (75\%) to adapt to MRI-specific features. This balanced preserving pre-trained knowledge with domain adaptation. Initial experiments with more aggressive freezing (keeping only the final fully connected layer trainable) resulted in numerical instabilities during training, manifested as NaN losses, suggesting that significant domain adaptation was necessary given the substantial differences between video action recognition and MRI classification.
+A selective transfer learning approach was implemented, freezing early convolutional layers (25\% of parameters) while allowing the final residual block and fully connected layer (75\%) to adapt to MRI-specific features. This balanced preserving pre-trained knowledge with domain adaptation. Initial experiments with more aggressive freezing (keeping only the final fully connected layer trainable) resulted in numerical instabilities during training, manifested as NaN losses, suggesting that significant domain adaptation was necessary given the substantial differences between video action recognition and MRI classification.
 
 A differential learning rate strategy applied a 10× higher learning rate to the newly initialized fully connected layer compared to the fine-tuned convolutional layers, enabling aggressive adaptation in the task-specific output layer while making more conservative updates to the pre-trained feature extraction layers.
 % TODO add learning rates code in appendix
@@ -693,7 +693,7 @@ The Receiver Operating Characteristic (ROC) curve in Figure \ref{fig:roc_curve} 
 
 \subsubsection{Cross-Validation Stability}
 
-To assess model stability and generalization, we performed 3-fold cross-validation with strict subject-level isolation maintained across folds. The results in Table \ref{tab:cross_validation} demonstrate consistent performance across different subject groupings, with a mean accuracy of 77.26\% and standard deviation of 2.34\%.
+To assess model stability and generalization, 3-fold cross-validation was performed with strict subject-level isolation maintained across folds. The results in Table \ref{tab:cross_validation} demonstrate consistent performance across different subject groupings, with a mean accuracy of 77.26\% and standard deviation of 2.34\%.
 
 \begin{table}[htbp]
 \centering
@@ -755,7 +755,7 @@ A systematic comparison of different 3D architectural variants revealed a clear 
 
 The fully 3D convolutional approach (R3D-18) consistently outperformed both the mixed convolution network (MC3-18) and the factorized convolutional approach (R(2+1)D-18), with test accuracies of 97.67\%, 93.02\%, and 94.18\% respectively; these figures are inflated due to group leakage. This progression strongly suggests that preserving complete 3D spatial context is critical for effective AD classification from volumetric MRI data.
 
-% after correcting for group leakage we saw test accuracies of 79.14\%, 67.63\%, and xxx\% respectively.
+% after correcting for group leakage saw test accuracies of 79.14\%, 67.63\%, and xxx\% respectively.
 % TODO add actual r2plus1d values and figure
 
 \subsubsection{Layer Freezing Strategy Analysis}
