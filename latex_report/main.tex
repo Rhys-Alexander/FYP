@@ -1257,13 +1257,111 @@ Perhaps the most methodologically significant challenge was preventing data leak
 This finding represents one of the most important methodological contributions of this work, highlighting how technical implementation details can dramatically impact the reported effectiveness of deep learning approaches for medical imaging.
 
 \subsection{Limitations}
-% Things to consider:
-%   - Dataset representativeness and potential biases
-%   - Focus on binary classification (AD vs. CN)
-%   - Technical constraints (resolution, model capacity)
-%   - Hardware constraints impact on model selection
-%   - Need for prospective validation
-%   - Generalizability concerns
+
+Despite the promising results and methodological contributions of this study, several important limitations must be acknowledged that affect both the interpretation of findings and potential clinical applications.
+
+\subsubsection{Dataset Considerations and Potential Biases}
+
+The exclusive use of the ADNI dataset, while providing standardized high-quality data, introduces potential biases that may affect generalizability:
+
+\begin{itemize}
+    \item \textbf{Demographic representativeness}: The ADNI cohort skews toward higher education levels and predominantly Caucasian participants (>90\%), potentially limiting generalizability across diverse populations where AD presentation and progression may differ~\cite{lamontagne2019oasis, jack2008alzheimer}.
+    
+    \item \textbf{Selection bias}: ADNI's stringent inclusion and exclusion criteria potentially exclude patients with significant comorbidities, vascular pathology, or mixed dementia—conditions frequently encountered in clinical practice~\cite{jack2008alzheimer}.
+    
+    \item \textbf{Scanner variability}: Despite ADNI's standardization efforts, inter-scanner and inter-site variations remain. While our augmentation strategy attempted to mitigate these effects, real-world deployment would encounter greater heterogeneity in acquisition parameters.
+    
+    \item \textbf{Disease spectrum representation}: By focusing on clear AD versus CN cases, our approach excludes the clinically challenging borderline presentations and early-stage disease, likely overestimating real-world performance where diagnostic uncertainty is prevalent.
+\end{itemize}
+
+\subsubsection{Binary Classification Simplification}
+
+The deliberate focus on binary classification (AD vs. CN) represents another significant limitation:
+
+\begin{itemize}
+    \item \textbf{Exclusion of MCI}: By excluding Mild Cognitive Impairment (MCI), the study addresses a simplified version of the clinical diagnostic challenge, where distinguishing early-stage impairment represents the more common and difficult task. This binary approach does not reflect the continuum of neurodegenerative changes encountered in clinical practice.
+    
+    \item \textbf{Lack of differential diagnosis}: In clinical practice, differentiating AD from other neurodegenerative conditions (vascular dementia, frontotemporal dementia, Lewy body dementia) is often more challenging and clinically relevant than distinguishing clear AD from normal cognition.
+    
+    \item \textbf{Categorical versus continuous assessment}: The binary classification simplifies what is fundamentally a continuous progression from normal aging to severe dementia, potentially missing subtle progression indicators valuable for monitoring disease trajectory.
+    
+    \item \textbf{Comorbidities}: Real-world patients frequently present with mixed pathologies that complicate diagnosis. Our approach does not account for these mixed presentations that constitute a significant portion of memory clinic referrals.
+\end{itemize}
+
+\subsubsection{Technical and Resolution Constraints}
+
+Resolution limitations significantly impacted the model's ability to detect subtle structural changes:
+
+\begin{itemize}
+    \item \textbf{Resolution compromise}: While the adaptive cropping strategy preserved more anatomical detail than naive downsampling, the final 128³ resolution still represents a substantial reduction from native MRI resolution (typically 1mm³ isotropic with dimensions around 256×256×170). This downsampling potentially obscures fine-grained structural differences, particularly in small regions critical for early AD detection.
+    
+    \item \textbf{Single modality analysis}: Relying solely on T1-weighted structural MRI ignores complementary information available from other sequences (T2, FLAIR, DTI) and modalities (PET) that might enhance diagnostic accuracy, particularly for atypical presentations.
+    
+    \item \textbf{Preprocessing simplifications}: The omission of spatial normalization, while preserving native atrophy patterns, potentially limits the model's ability to learn consistent spatial patterns across subjects.
+    
+    \item \textbf{Input standardization}: The standardization to 128³ cubes, while necessary for computational feasibility, introduces interpolation artifacts that may affect fine structural details.
+\end{itemize}
+
+\subsubsection{Hardware Constraints and Computational Limitations}
+
+Consumer-grade hardware imposed significant limitations that directly affected methodological choices:
+
+\begin{itemize}
+    \item \textbf{Memory limitations}: The available 8GB of GPU memory (7.5GB utilized) prevented implementation of state-of-the-art transformer architectures and limited batch size to just 2 samples, potentially affecting training dynamics and convergence characteristics.
+    
+    \item \textbf{Training time constraints}: The approximate 20-hour training time per experiment significantly limited the breadth of hyperparameter optimization and cross-validation approaches. A more comprehensive hyperparameter search might have yielded performance improvements of 2-5\% based on similar studies~\cite{wen2020convolutional}.
+    
+    \item \textbf{Architecture selection bias}: Hardware constraints biased our architectural selection toward memory-efficient models rather than state-of-the-art approaches, preventing exploration of Vision Transformers that have demonstrated superior performance in other computer vision tasks.
+    
+    \item \textbf{Limited ablation studies}: Comprehensive ablation studies isolating the contribution of each methodological decision were impractical given training time constraints, limiting our understanding of which components contribute most significantly to performance.
+\end{itemize}
+
+\subsubsection{Methodological Considerations and Transfer Learning Limitations}
+
+The transfer learning approach, while innovative, introduces fundamental limitations:
+
+\begin{itemize}
+    \item \textbf{Domain mismatch}: Transfer learning from video action recognition represents a significant domain shift. While low-level feature extractors transfer reasonably well, higher-level semantic representations likely require substantial adaptation, potentially explaining the performance ceiling observed.
+    
+    \item \textbf{Pre-training task relevance}: Features optimized for capturing motion patterns and temporal dynamics in videos are inherently different from the structural patterns relevant in AD detection, limiting the effectiveness of knowledge transfer.
+    
+    \item \textbf{Limited architectural exploration}: The focus on ResNet variants precluded exploration of newer architectural paradigms like transformers or neural architecture search approaches that might yield improved performance.
+    
+    \item \textbf{Adaptation strategy limitations}: The layer freezing approach used represents one of many possible transfer learning strategies, and more sophisticated adaptation methods might better bridge the domain gap.
+\end{itemize}
+
+\subsubsection{Validation and Clinical Translation Barriers}
+
+The retrospective nature of this study presents inherent limitations for clinical translation:
+
+\begin{itemize}
+    \item \textbf{Single dataset validation}: Testing was performed exclusively on ADNI data with its standardized acquisition protocols that may not reflect the variability encountered in routine clinical settings. External validation across diverse datasets is essential for assessing real-world performance.
+    
+    \item \textbf{Retrospective design}: Our retrospective analysis does not capture prospective performance in a clinical workflow, where factors like acquisition variability and patient selection significantly impact utility.
+    
+    \item \textbf{Limited cross-validation}: While 3-fold cross-validation provided some assessment of generalizability, more extensive validation across different acquisition sites or protocols would strengthen confidence in the robustness of our approach.
+    
+    \item \textbf{Performance gap}: The model's performance (77.26\% accuracy), while promising, falls short of the threshold typically considered necessary for independent clinical applications (>90\%), limiting its immediate translational potential to assistive rather than autonomous functions.
+    
+    \item \textbf{Lack of radiologist comparison}: Direct comparison with radiologist performance on the same test set was not performed, which would have provided valuable context for the model's relative clinical utility.
+\end{itemize}
+
+\subsubsection{Interpretability and Explainability Limitations}
+
+Despite visualization attempts, several interpretability limitations remain:
+
+\begin{itemize}
+    \item \textbf{Limited explainability}: The current implementation offers limited insight into specific decision-making processes beyond visualization of attention regions. This "black box" nature presents barriers to clinical acceptance.
+    
+    \item \textbf{Region-specific interpretations}: The lack of feature-specific interpretation (e.g., quantification of specific regional atrophy patterns and their contribution to classification) limits the model's ability to provide clinically actionable insights beyond binary classification.
+    
+    \item \textbf{Threshold determination}: The optimal decision threshold for clinical use remains undetermined, with different thresholds potentially appropriate for screening versus diagnostic confirmation contexts.
+    
+    \item \textbf{Confidence calibration}: The model outputs probability scores that may not be well-calibrated to actual diagnostic confidence, potentially misleading clinical interpretation without proper calibration procedures.
+\end{itemize}
+
+These limitations collectively suggest several promising directions for future research, including architectural innovations specifically designed for volumetric medical data, multimodal approaches integrating complementary imaging sequences, and more comprehensive validation strategies that better approximate clinical deployment conditions.
+
 
 \section{Conclusions}
 % 1,000 words
