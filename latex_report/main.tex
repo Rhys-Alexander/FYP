@@ -145,7 +145,7 @@ Word count: X,XXX   \hfill{} Dr Rickson Mesquita
 %   - Brief outline of subsequent chapters
 
 \section{Literature Review}
-% 2,000 words 
+% 2,000 words
 
 This review synthesizes current knowledge across medical and computational domains relevant to Alzheimer's disease detection using deep learning approaches, examining AD neuroimaging biomarkers, computational approaches, and research gaps.
 
@@ -162,30 +162,31 @@ Alzheimer's disease pathophysiology follows a predictable cascade, beginning wit
   \label{fig:biomarker_progression}
 \end{figure}
 
-\subsubsection{Hippocampal Atrophy as Primary Biomarker}
-
 Hippocampal atrophy represents one of the earliest and most established structural biomarkers in Alzheimer's disease progression~\cite{jack1992mr}. Volume reductions follow a predictable pattern, beginning years before clinical symptoms emerge, with annual atrophy rates of 3-6\% in AD compared to 1-2\% in normal aging~\cite{vemuri2010role}. Volumetric measurements correlate strongly with cognitive decline and Braak staging of neurofibrillary pathology. Standardized quantification methods include manual tracing, automated segmentation, and shape analysis, achieving diagnostic sensitivities of 80-90\% and specificities of 80-95\% in distinguishing AD from healthy controls~\cite{cuingnet2011automatic}.
-
-\subsubsection{Additional Neuroimaging Markers}
 
 Beyond volumetric measurements, shape analysis methods capture morphological changes in brain structures~\cite{ferrarini2006shape}, detecting subtle deformations missed by volume alone. Other promising markers include cortical thickness measurements~\cite{gutierrez2009patterns}, white matter integrity via diffusion tensor imaging, functional connectivity patterns, and metabolic alterations detectable through PET imaging~\cite{vemuri2010role}. These diverse markers provide complementary information that may enhance transfer learning models' diagnostic accuracy.
 
-\subsubsection{Current Clinical Diagnostic Practices and Limitations}
+\subsubsection{Current Clinical Approaches and the Role of Structural MRI}
 
 Current AD diagnosis follows NINCDS-ADRDA criteria, integrating clinical assessment, cognitive testing, and biomarker analysis~\cite{dubois2007research}. Visual assessment of neuroimaging suffers from significant inter-reader variability, with diagnostic accuracy dependent on radiologist expertise~\cite{cuingnet2011automatic}. A substantial temporal gap exists between initial pathological changes and clinical manifestation, complicating early intervention~\cite{jack2018nia}. Additionally, clinical diagnostic accuracy ranges from 65-96\%, with lower precision in early disease stages when intervention would be most beneficial~\cite{kloppel2008accuracy}.
 
-\subsubsection{Role of Structural MRI and T1-weighted Imaging in Diagnosis}
+Within this diagnostic framework, structural MRI provides objective evidence of neurodegeneration that complements clinical assessment, with hippocampal atrophy serving as a primary biomarker~\cite{dubois2007research}. MRI's advantages include non-invasiveness compared to CSF sampling, absence of radiation exposure unlike PET, wider availability, and lower cost~\cite{vemuri2010role}. However, visual assessment suffers from inter-reader variability and limited sensitivity to subtle changes, with accuracy heavily dependent on radiologist expertise~\cite{kloppel2008accuracy}. These limitations underscore the need for quantitative, automated analysis approaches.
 
-Structural MRI provides objective evidence of neurodegeneration that complements clinical assessment, with hippocampal atrophy serving as a primary biomarker~\cite{dubois2007research}. MRI's advantages include non-invasiveness compared to CSF sampling, absence of radiation exposure unlike PET, wider availability, and lower cost~\cite{vemuri2010role}. However, visual assessment suffers from inter-reader variability and limited sensitivity to subtle changes, with accuracy heavily dependent on radiologist expertise~\cite{kloppel2008accuracy}. These limitations underscore the need for quantitative, automated analysis approaches.
 T1-weighted imaging offers optimal gray/white matter contrast that enhances visualization of atrophy patterns characteristic of AD~\cite{herrera2013classification}. The standardized MPRAGE protocol ensures consistent acquisition parameters across centers, facilitating algorithm development. T1-weighted sequences are widely available in clinical settings, requiring shorter acquisition times than specialized alternatives while providing excellent anatomical detail for detecting subtle volumetric changes in regions affected early in disease progression.
 
 \subsection{Deep Learning for Medical Image Analysis}
 
-\subsubsection{Evolution from Traditional ML to Deep Learning}
+\subsubsection{Evolution and Challenges of Deep Learning in Neuroimaging}
 
 Machine learning approaches for neuroimaging have evolved dramatically over the past decade~\cite{bari2021comparative}. Early methods relied on hand-crafted features and shallow classifiers such as Support Vector Machines (SVMs), requiring extensive domain knowledge for feature engineering~\cite{cuingnet2011automatic}. These approaches typically processed predefined regions of interest, achieving moderate success but lacking generalizability. The shift to deep learning eliminated manual feature extraction, allowing end-to-end learning directly from volumetric data~\cite{litjens2017survey}. This transition has yielded substantial performance improvements, with convolutional neural networks demonstrating superior classification accuracy while requiring less preprocessing and domain expertise. The evolution reflects a fundamental shift from explicit feature definition to automatic hierarchical feature learning.
 
-\subsubsection{2D vs. 3D Approaches for Volumetric Data}
+However, deep learning approaches for medical imaging face several challenges compared to natural image analysis. Data scarcity is a primary limitation, with medical datasets typically orders of magnitude smaller than natural image collections~\cite{litjens2017survey}. This is exacerbated in neuroimaging where patient cohorts are smaller and annotation requires expertise. Also, most neuroimaging datasets are collected at specialized centers, leading to potential dataset bias.
+
+Class imbalance presents another obstacle, particularly in Alzheimer's datasets where diagnostic categories are often unevenly distributed~\cite{davatzikos2019machine}. Clinical deployment demands model interpretability beyond accuracy metrics, as clinicians require transparency in decision-making processes. Explicable AI methods attempt to address this by identifying brain regions contributing to model decisions.
+
+Validation protocols in neuroimaging require particular attention to prevent data leakage through subject-level rather than scan-level partitioning, an issue frequently overlooked in published studies~\cite{litjens2017survey}.
+
+\subsubsection{Volumetric Approaches for Neuroimaging Analysis}
 
 The analysis of volumetric MRI data presents a fundamental trade-off between 2D and 3D approaches. Two-dimensional methods process brain scans as independent slices, offering computational efficiency and leveraging established architectures pretrained on natural images~\cite{liang2021alzheimer, sarraf2016classification}. However, these approaches inevitably lose spatial context between slices, potentially missing subtle 3D patterns crucial for AD detection~\cite{gunawardena2017applying}. Conversely, 3D CNNs preserve volumetric relationships and capture the entire spatial context of atrophy patterns~\cite{payan2015predicting}, but require substantially more parameters and memory~\cite{yang2021reinventing}. This computational burden necessitates downsampling in resource-constrained environments, creating a direct trade-off between spatial resolution and contextual information preservation.
 
@@ -214,34 +215,6 @@ Performance & Moderate, particularly with ensemble approaches & Superior when su
 \label{tab:2d_vs_3d}
 \end{table}
 
-\subsubsection{Transfer Learning in Medical Imaging}
-
-Transfer learning addresses data scarcity in medical imaging by leveraging knowledge from models pretrained on large datasets~\cite{hon2017towards}. This approach is particularly valuable for neuroimaging applications where annotated data is limited~\cite{ebrahimi2019transfer}. When applying transfer learning to medical domains, researchers must navigate significant domain shifts between natural images and medical scans~\cite{mehmood2021transfer}.
-
-Transfer learning strategies for medical imaging include:
-\begin{enumerate}
-\item \textbf{Natural image transfer:} Models pretrained on ImageNet are adapted to 2D medical slices~\cite{maqsood2019transfer}.
-\item \textbf{Cross-modality transfer:} Knowledge from one imaging modality is transferred to another~\cite{yang2020mri, kieselmann2021cross}.
-\item \textbf{Video-to-volumetric transfer:} Models pretrained on video datasets are adapted to 3D medical volumes~\cite{wu20223d}.
-\item \textbf{Self-supervised pretraining:} Models are pretrained on unlabeled medical data using proxy tasks~\cite{tang2022self}.
-\end{enumerate}
-
-For Alzheimer's detection, researchers have explored ImageNet pretrained models using 2D slice-based methods~\cite{hon2017towards,maqsood2019transfer}, and more recently, 3D volumetric techniques with transfer from video classification models~\cite{ebrahimi2020introducing}, which shows promise due to architectural parallels between spatiotemporal video data and volumetric MRI.
-
-To adapt pretrained models, early layers are frozen to retain low-level features while fine-tuning deeper layers for domain-specific patterns~\cite{acharya2021alzheimer}. The effectiveness of different freezing strategies depends on the similarity between source and target domains.
-
-\subsubsection{Challenges in Deep Learning for Medical Imaging}
-
-Deep learning approaches for medical imaging face several challenges compared to natural image analysis. Data scarcity is a primary limitation, with medical datasets typically orders of magnitude smaller than natural image collections~\cite{litjens2017survey}. This is exacerbated in neuroimaging where patient cohorts are smaller and annotation requires expertise. Also, most neuroimaging datasets are collected at specialized centers, leading to potential dataset bias.
-
-Class imbalance presents another obstacle, particularly in Alzheimer's datasets where diagnostic categories are often unevenly distributed~\cite{davatzikos2019machine}. Clinical deployment demands model interpretability beyond accuracy metrics, as clinicians require transparency in decision-making processes. Explicable AI methods attempt to address this by identifying brain regions contributing to model decisions.
-
-Validation protocols in neuroimaging require particular attention to prevent data leakage through subject-level rather than scan-level partitioning, an issue frequently overlooked in published studies~\cite{litjens2017survey}.
-
-\subsection{3D Deep Learning Architectures}
-
-\subsubsection{3D CNN Architectures (ResNet and Variants)}
-
 3D CNNs extend convolutional operations to volumetric data, preserving spatial relationships across all dimensions critical for detecting subtle neuroanatomical changes in AD~\cite{ebrahimi2020introducing}. Early on, succesful 3D convolutional autoencoders for Alzheimer's classification established the value of learning hierarchical spatial features directly from volumetric data~\cite{payan2015predicting}. Residual networks address the vanishing gradient problem through identity shortcuts, enabling deeper architectures beneficial for capturing hierarchical patterns in volumetric MRI~\cite{wu20223d}. 3D ResNet-18 represents an optimal balance between depth and computational efficiency, containing 33.2M parameters compared to 46.4M in ResNet-34~\cite{ebrahimi2020introducing}. Architectural variants, compared in figure \ref{fig:cnn_architectures}, include MC3 (mixed 2D/3D convolutions) and R(2+1)D (factorizing 3D convolutions into spatial and temporal components, figure \ref{fig:2plus1D}) that maintain performance while reducing computational demands~\cite{wu20223d}. R3D preserves full spatial context across all dimensions, while MC3 and R(2+1)D offer computational efficiency with different approaches to dimensional processing~\cite{tran2018closer}.
 
 \begin{figure}[htbp]
@@ -257,8 +230,6 @@ Validation protocols in neuroimaging require particular attention to prevent dat
   \caption{Schematic comparison of ResNet architectures. We will focus on (a) R3D (fully 3D convolutions), (b) MC3 (mixed 2D/3D convolutions), and (c) R(2+1)D (factorized convolutions)~\cite{tran2018closer}.}
   \label{fig:cnn_architectures}
 \end{figure}
-
-\subsubsection{Vision Transformers for Volumetric Data}
 
 Vision Transformers (ViTs) have been adapted to volumetric medical imaging by extending self-attention mechanisms to capture 3D spatial relationships~\cite{lyu2022classification}. Yan et al. demonstrated that hybrid architectures combining CNN and transformer components (Hybrid-RViT) leverage both local feature extraction and global context modeling, outperforming pure CNN or transformer approaches for Alzheimer's detection~\cite{yan2025hybrid}. Despite their capacity to model long-range dependencies, volumetric transformers face computational challenges due to quadratic complexity with input size. Recent efficient transformer variants address these limitations through sparse attention patterns and hierarchical designs~\cite{lu2025efficient}.
 
@@ -285,11 +256,25 @@ Hybrid CNN-ViT & Combines local feature extraction with global context modeling 
 \label{tab:architecture_comparison}
 \end{table}
 
-\subsubsection{Video Classification Models and Medical Adaptation}
-
 The conceptual similarity between video sequences and volumetric medical data enables innovative transfer learning approaches. In videos, the temporal dimension captures motion patterns, while in 3D MRI, the depth dimension encodes spatial relationships~\cite{tran2018closer}. Models like MC3, R(2+1)D, and r3d\_18 pre-trained on large video datasets like Kinetics-400 can be fine-tuned for MRI classification by treating the axial dimension as analogous to time~\cite{ebrahimi2020introducing, tran2018closer}.
 
 The adaptation process requires careful consideration of domain differences. Motion patterns in videos have no direct relation to static MRI volumes, necessitating fine-tuning strategies that adapt pretrained feature extractors to the neuroimaging domain.
+
+\subsubsection{Transfer Learning in Medical Imaging}
+
+Transfer learning addresses data scarcity in medical imaging by leveraging knowledge from models pretrained on large datasets~\cite{hon2017towards}. This approach is particularly valuable for neuroimaging applications where annotated data is limited~\cite{ebrahimi2019transfer}. When applying transfer learning to medical domains, researchers must navigate significant domain shifts between natural images and medical scans~\cite{mehmood2021transfer}.
+
+Transfer learning strategies for medical imaging include:
+\begin{enumerate}
+\item \textbf{Natural image transfer:} Models pretrained on ImageNet are adapted to 2D medical slices~\cite{maqsood2019transfer}.
+\item \textbf{Cross-modality transfer:} Knowledge from one imaging modality is transferred to another~\cite{yang2020mri, kieselmann2021cross}.
+\item \textbf{Video-to-volumetric transfer:} Models pretrained on video datasets are adapted to 3D medical volumes~\cite{wu20223d}.
+\item \textbf{Self-supervised pretraining:} Models are pretrained on unlabeled medical data using proxy tasks~\cite{tang2022self}.
+\end{enumerate}
+
+For Alzheimer's detection, researchers have explored ImageNet pretrained models using 2D slice-based methods~\cite{hon2017towards,maqsood2019transfer}, and more recently, 3D volumetric techniques with transfer from video classification models~\cite{ebrahimi2020introducing}, which shows promise due to architectural parallels between spatiotemporal video data and volumetric MRI.
+
+To adapt pretrained models, early layers are frozen to retain low-level features while fine-tuning deeper layers for domain-specific patterns~\cite{acharya2021alzheimer}. The effectiveness of different freezing strategies depends on the similarity between source and target domains.
 
 \subsubsection{Performance Comparisons from Existing Literature}
 
@@ -339,7 +324,7 @@ Bias Field Correction & N4 algorithm & Reduces intensity non-uniformity artifact
 \label{tab:preprocessing_impact}
 \end{table}
 
-\subsection{Data Partitioning and Group Leakage Prevention}
+\subsubsection{Data Partitioning and Group Leakage Prevention}
 \label{subsec:data_partitioning}
 
 Data leakage represents a critical methodological concern in neuroimaging studies, occurring when information from test samples inadvertently influences model training. This issue is particularly problematic in longitudinal neuroimaging datasets with multiple scans from the same subject across different timepoints~\cite{davatzikos2019machine}.
@@ -451,15 +436,13 @@ Validation experiments confirmed that models trained on native-space data perfor
 
 The entire pipeline produced 1,300 preprocessed volumes with consistent dimensions, orientation, and intensity characteristics while preserving the structural variations essential for AD classification.
 
-\subsection{Data Splitting Strategy}
+\subsubsection{Data Splitting Strategy}
 
 A methodologically rigorous data splitting approach was implemented to prevent data leakage while maintaining diagnostic balance across partitions. Unlike conventional image classification tasks, neuroimaging datasets require subject-level rather than scan-level splitting since multiple scans often exist for the same individual.
 
-\subsubsection{Subject-Level Isolation}
-
 A strict subject-level isolation approach ensured no individual appeared in multiple dataset partitions—a critical decision after initial experiments revealed artificially inflated performance metrics ($\sim$90\% accuracy) when subjects were allowed to cross partition boundaries. Complete subject isolation produced a more realistic performance assessment ($\sim$77\% accuracy), better reflecting the model's generalization capability to unseen individuals.
 
-\subsubsection{Partition Distribution}
+To prevent subtle forms of data leakage, preprocessing parameters (such as intensity normalization statistics) were computed independently within each partition. This methodologically sound approach ensured that performance metrics would accurately reflect the model's ability to generalize to entirely new individuals, rather than merely recognizing previously seen subjects in different scans.
 
 The dataset was divided following an 80/10/10 (train/validation/test) ratio using a round-robin algorithm that:
 \begin{enumerate}
@@ -470,10 +453,6 @@ The dataset was divided following an 80/10/10 (train/validation/test) ratio usin
 \end{enumerate}
 
 This approach yielded a balanced distribution with 1,023 training scans (512 AD/511 CN), 139 validation scans (69 AD/70 CN), and 138 test scans (69 AD/69 CN). The strict isolation maintained 203 unique subjects in training, 80 in validation, and 80 in test sets, with diagnostic balance preserved in each partition.
-
-\paragraph{Data Leakage Prevention}
-
-To prevent subtle forms of data leakage, subject identifiers were rigorously tracked and preprocessing parameters (such as intensity normalization statistics) were computed independently within each partition. This methodologically sound approach ensured that performance metrics would accurately reflect the model's ability to generalize to entirely new individuals, rather than merely recognizing previously seen subjects in different scans.
 
 \subsection{Data Augmentation}
 
@@ -500,17 +479,25 @@ Notably, several common augmentation techniques were deliberately excluded after
 \end{itemize}
 
 The final strategy evolved from extensive transformations to this focused set through iterative evaluation of validation performance and convergence speed, representing an optimal balance between enhancing robustness and preserving critical structural features essential for AD classification.
-\subsection{Model Architectures}
-\subsubsection{3D ResNet Architecture}
+\subsection{Model Development and Training}
+\subsubsection{Model Architecture}
 
-The primary model was a modified 3D ResNet-18 (r3d\_18), the implementation used PyTorch's pre-trained r3d\_18 model, with the first layer modified to accept single-channel MRI volumes and the final layer adapted for binary classification. The model architecture consisted of 18 layers, with the first layer being a 3D convolutional layer followed by four residual blocks, each containing two 3D convolutional layers. The final fully connected layer was adapted to output binary classification scores. The model was trained using a transfer learning approach, leveraging pre-trained weights from the Kinetics400 dataset, which provided a strong initialization for the feature extraction layers.
+The primary model was a modified 3D ResNet-18 (r3d\_18), the implementation used PyTorch's pre-trained r3d\_18 model, with the first layer modified to accept single-channel MRI volumes and the final layer adapted for binary classification. The model architecture consisted of 18 layers, with the first layer being a 3D convolutional layer followed by four residual blocks, each containing two 3D convolutional layers. The final fully connected layer was adapted to output binary classification scores.
 
-\subsubsection{Transfer Learning Strategy}
-
-A selective transfer learning approach was implemented, freezing early convolutional layers (25\% of parameters) while allowing the final residual block and fully connected layer (75\%) to adapt to MRI-specific features. This balanced preserving pre-trained knowledge with domain adaptation. Initial experiments with more aggressive freezing (keeping only the final fully connected layer trainable) resulted in numerical instabilities during training, manifested as NaN losses, suggesting that significant domain adaptation was necessary given the substantial differences between video action recognition and MRI classification.
+The model was trained using a transfer learning approach, leveraging pre-trained weights from the Kinetics400 dataset, which provided a strong initialization for the feature extraction layers. Early convolutional layers (25\% of parameters) were frozen while allowing the final residual block and fully connected layer (75\%) to adapt to MRI-specific features. This balanced preserving pre-trained knowledge with domain adaptation. Initial experiments with more aggressive freezing (keeping only the final fully connected layer trainable) resulted in numerical instabilities during training, manifested as NaN losses, suggesting that significant domain adaptation was necessary given the substantial differences between video action recognition and MRI classification.
 
 A differential learning rate strategy applied a 10× higher learning rate to the newly initialized fully connected layer compared to the fine-tuned convolutional layers, enabling aggressive adaptation in the task-specific output layer while making more conservative updates to the pre-trained feature extraction layers.
 % TODO add learning rates code in appendix
+
+The final model architecture parameters were:
+
+\begin{itemize}
+    \item \textbf{Total parameters}: 33,148,482
+    \item \textbf{Trainable parameters}: 24,909,826 (75.15\%)
+    \item \textbf{Frozen parameters}: 8,238,656 (24.85\%)
+\end{itemize}
+
+These figures represent a significant reduction compared to larger architectures like ResNet-50 or ViT variants, making training feasible on consumer-grade hardware while maintaining sufficient capacity for the classification task. The reduced parameter count also potentially mitigated overfitting given the relatively small dataset size.
 
 \subsubsection{Architecture Comparison}
 
@@ -536,19 +523,7 @@ To validate architectural choices, models were systematically evaluated with dec
       These constraints prevented full evaluation of transformer-based approaches, highlighting an important practical limitation in applying state-of-the-art vision models to medical imaging with limited computational resources.
 \end{enumerate}
 
-\subsubsection{Parameter Counts and Computational Considerations}
-
-The final model architecture parameters were:
-
-\begin{itemize}
-    \item \textbf{Total parameters}: 33,148,482
-    \item \textbf{Trainable parameters}: 24,909,826 (75.15\%)
-    \item \textbf{Frozen parameters}: 8,238,656 (24.85\%)
-\end{itemize}
-
-These figures represent a significant reduction compared to larger architectures like ResNet-50 or ViT variants, making training feasible on consumer-grade hardware while maintaining sufficient capacity for the classification task. The reduced parameter count also potentially mitigated overfitting given the relatively small dataset size.
-
-\subsection{Training Framework and Implementation}
+\subsubsection{Training Framework and Implementation}
 
 Training was conducted on an M1 Mac using Metal Performance Shaders, with each epoch requiring approximately one hour and full training runs taking $\sim$20 hours. This hardware constrained batch size and architecture selection. Despite attempts at optimization through mixed precision training and CPU-GPU synchronization, computational bottlenecks in the model's forward pass remained.
 
@@ -644,7 +619,7 @@ Cross-validation reveal performance consistency across subject groupings, while 
 
 This section presents the quantitative and qualitative results of the proposed transfer learning approach for Alzheimer's disease detection using pre-trained video classification models adapted to MRI analysis. The results demonstrate the effectiveness of 3D convolutional architectures, particularly the R3D-18 model, for identifying structural patterns associated with AD.
 
-\subsection{Overall Performance Metrics}
+\subsection{Model Performance Analysis}
 
 \subsubsection{Classification Performance}
 
@@ -730,7 +705,7 @@ The learning curves for the R3D-18 model over 3 folds exhibited relatively quick
 
 The validation accuracy typically plateaued around epoch 5, after which the early stopping mechanism prevented overfitting by halting training when no further improvement was observed for 5 consecutive epochs.
 
-\subsection{Architectural Comparisons}
+\subsection{Architectural Insights}
 
 \subsubsection{Dimensional Processing Impact}
 
@@ -765,12 +740,38 @@ Full fine-tuning & 100\% (33.1M) & Successful & Increased overfitting risk, slow
 \caption{Comparison of different layer freezing strategies and their impact on training stability and performance.}
 \label{tab:freezing_strategies}
 \end{table}
+% todo check this cuz it wasn't actually tested from scratch
 
 Notably, attempting to train only the final fully connected layer (preserving 99.997\% of pre-trained weights) resulted in numerical instability, suggesting that significant domain adaptation is necessary for the substantial shift from video action recognition to MRI classification. The optimal approach (FC + Layer 4) balanced stable training with effective knowledge transfer.
 
+\subsubsection{Computational Performance Analysis}
+
+Training on a consumer-grade M1 Mac using Metal Performance Shaders demonstrated both the feasibility and challenges of developing deep learning models for neuroimaging on accessible hardware. Table \ref{tab:computational_performance} summarizes the computational characteristics of different architectures.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Architecture} & \textbf{Training Time/Epoch} & \textbf{Memory Usage} \\
+\hline
+R3D-18 & $\sim$1 hour & 7.5 GB \\
+\hline
+MC3-18 & $\sim$4 hours & 7.6 GB \\
+\hline
+R(2+1)D-18 & $\sim$5 hours & 7.4 GB \\
+\hline
+MViT & Failed (OOM) & >32 GB (estimated) \\
+\hline
+\end{tabular}
+\caption{Computational performance metrics for different model architectures.}
+\label{tab:computational_performance}
+\end{table}
+
+Despite optimization attempts (mixed precision, layer optimization, batch size tuning), the forward pass remained the primary bottleneck in the training process. The memory constraints also prevented exploration of larger transformer-based architectures like MViT, which required an estimated >32GB of memory for the 128³ input volumes.
+
 \subsection{Preprocessing Impact Analysis}
 
-\subsubsection{Impact of Crop-and-Reshape Strategy}
+\subsubsection{Resolution and Cropping Strategy Evaluation}
 
 The adaptive cropping strategy yielded substantial performance improvements compared to naive interpolation. As shown in Figure \ref{fig:cropping_impact}, the accuracy differential between models trained on 96³ naively interpolated volumes versus 128³ adaptively cropped volumes was significant.
 
@@ -798,9 +799,7 @@ The literature suggests that high-quality skull stripping is important for AD cl
   \label{fig:skull_stripping_comparison}
 \end{figure}
 
-\subsection{Augmentation Effectiveness}
-
-\subsubsection{Comparative Analysis of Augmentation Strategies}
+\subsubsection{Augmentation and Normalization Effects}
 
 Through systematic experimentation, it was identified that minimal, targeted augmentation outperformed more extensive transformation sets. Figure \ref{fig:augmentation_comparison} illustrates the performance impact of different augmentation strategies. $tio_s$ and $tio_l$ being torchio augmentations with smaller and larger values, the augmentations include rotations, translations, random noise, gamma adjustment, and z-normalization, showing the effectiveness of minimalist approach focusing on noise, gamma adjustment, and normalization versus more extensive transformations. $tio_flip$ was $tio_s$ plus flips, and $monai$ was using similar augmentations to $tio_flip$ but using the monai library.
 
@@ -811,10 +810,6 @@ Through systematic experimentation, it was identified that minimal, targeted aug
   \label{fig:augmentation_comparison}
 \end{figure}
 
-The optimal strategy (random noise + gamma adjustment + Z-normalization) improved validation accuracy by $\sim$5\% compared to using no augmentation, while the addition of geometric transformations (rotations, flips) not only failed to improve performance, as they all remaied within ±2\% but significantly increased training time from $\sim$5 to $\sim$20 epochs for comparable convergence.
-
-\subsubsection{Normalization Impact}
-
 Z-normalization proved particularly effective, as demonstrated in Figure \ref{fig:normalisation_accuracy} which shows the consistent improvement in validation accuracy as well as a more stable convergence when normalization was included in the augmentation pipeline.
 
 \begin{figure}[htbp]
@@ -824,7 +819,9 @@ Z-normalization proved particularly effective, as demonstrated in Figure \ref{fi
   \label{fig:normalisation_accuracy}
 \end{figure}
 
-\subsection{Group Leakage Impact}
+The optimal strategy (random noise + gamma adjustment + Z-normalization) improved validation accuracy by $\sim$5\% compared to using no augmentation, while the addition of geometric transformations (rotations, flips) not only failed to improve performance, as they all remaied within ±2\% but significantly increased training time from $\sim$5 to $\sim$20 epochs for comparable convergence.
+
+\subsubsection{Group Leakage Impact}
 
 The methodological investigation into group leakage (subject-level vs. scan-level partitioning) confirmed previous findings about inflated performance metrics. As shown in Figure \ref{fig:group_leakage}, scan-level partitioning produced artificially high accuracy (>90\%) compared to the more realistic subject-level isolation (77\%), demonstrating the critical importance of proper validation methodology in neuroimaging studies. We see one model with complete group leakage (scan-level), one with no group leakage (subject-level), and one with partial group leakage (train and val sets have some overlap). The model with complete group leakage achieved a test accuracy of 97.67\%, while the model with no group leakage achieved an accuracy of 70.28\%. The model with partial group leakage achieved an accuracy of 79.57\%.
 
@@ -836,31 +833,6 @@ The methodological investigation into group leakage (subject-level vs. scan-leve
 \end{figure}
 
 This 20-percentage-point difference highlights the critical importance of proper validation methodology in neuroimaging studies and suggests that previously published results may be significantly overestimated if they employed scan-level partitioning.
-
-\subsection{Computational Performance Analysis}
-
-Training on a consumer-grade M1 Mac using Metal Performance Shaders demonstrated both the feasibility and challenges of developing deep learning models for neuroimaging on accessible hardware. Table \ref{tab:computational_performance} summarizes the computational characteristics of different architectures.
-
-\begin{table}[htbp]
-\centering
-\begin{tabular}{|l|c|c|c|}
-\hline
-\textbf{Architecture} & \textbf{Training Time/Epoch} & \textbf{Memory Usage} \\
-\hline
-R3D-18 & $\sim$1 hour & 7.5 GB \\
-\hline
-MC3-18 & $\sim$4 hours & 7.6 GB \\
-\hline
-R(2+1)D-18 & $\sim$5 hours & 7.4 GB \\
-\hline
-MViT & Failed (OOM) & >32 GB (estimated) \\
-\hline
-\end{tabular}
-\caption{Computational performance metrics for different model architectures.}
-\label{tab:computational_performance}
-\end{table}
-
-Despite optimization attempts (mixed precision, layer optimization, batch size tuning), the forward pass remained the primary bottleneck in the training process. The memory constraints also prevented exploration of larger transformer-based architectures like MViT, which required an estimated >32GB of memory for the 128³ input volumes.
 
 \subsection{Explicable AI}
 % TODO Visualization of model attention/activation maps XAI
