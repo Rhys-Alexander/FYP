@@ -117,34 +117,41 @@ Word count: X,XXX   \hfill{} Dr Rickson Mesquita
 \section{Abstract}
 % 250 words
 
-% - Brief overview of the problem and motivation
-% - Summary of methodology and main contributions
-% - Key results and conclusions
-% - Implications and significance
-
 \section{Introduction}
 % 1,000 words
 
-% - **Problem statement**
-%   - Challenges in Alzheimer's disease diagnosis
-%   - Importance of early and accurate detection
-%   - Role of neuroimaging in diagnosis
-% - **Motivation**
-%   - Clinical importance of automating AD detection
-%   - Limitations of current diagnostic approaches
-%   - Why T1-weighted MRI is particularly valuable (accessibility, non-invasive, etc.)
-% - **Research objectives**
-%   - Examine transfer learning from video models to 3D MRI analysis
-%   - Compare 3D CNN performance to alternative approaches
-%   - Identify brain regions contributing to model decisions
-% - **Novel contributions**
-%   - Application of pre-trained video classification models for MRI analysis
-%   - Domain-specific preprocessing pipeline for structural brain MRI
-%   - Subject-level validation methodology preventing data leakage
-% - **Dissertation roadmap**
-%   - Brief outline of subsequent chapters
+Alzheimer's disease (AD) represents a profound global health challenge, casting a long shadow over aging populations worldwide. As the most common form of dementia, it progressively erodes cognitive functions, memory, and ultimately, personal independence, impacting millions of individuals, their families, and healthcare systems \cite{nichols2022estimation}. The insidious nature of AD often means that irreversible neurological damage has occurred long before clinical symptoms become apparent, making early and accurate detection a critical priority. Timely diagnosis not only facilitates access to supportive care and potential therapeutic interventions but also allows individuals and families to plan for the future. Neuroimaging, particularly structural Magnetic Resonance Imaging (MRI), has emerged as a cornerstone in the diagnostic pathway, offering a non-invasive window into the brain's structure and revealing characteristic patterns of atrophy associated with AD, such as shrinkage in the hippocampus and entorhinal cortex \cite{vemuri2010role, frisoni2010clinical}.
+
+Despite the power of MRI, its interpretation in the context of AD diagnosis faces significant hurdles. Manual assessment by radiologists, while essential, is subject to inter-reader variability and can be time-consuming \cite{cuingnet2011automatic}. Furthermore, distinguishing the subtle structural changes of early AD from normal age-related variations requires considerable expertise, and these early signs may be missed by human observers \cite{kloppel2008accuracy}. The sheer volume of imaging data generated in clinical practice also places considerable strain on resources, challenging timely expert evaluation. These limitations underscore the urgent need for automated, objective, and reliable methods to analyze neuroimaging data, potentially augmenting clinical decision-making and improving diagnostic consistency and efficiency.
+
+The advent of artificial intelligence (AI), particularly deep learning, has revolutionized medical image analysis over the past decade. Deep learning models, especially Convolutional Neural Networks (CNNs), have demonstrated remarkable success in learning complex patterns directly from image data, often surpassing traditional machine learning approaches that relied on manually engineered features \cite{litjens2017survey}. In neuroimaging, these techniques have shown promise for tasks ranging from tumour segmentation to disease classification. However, applying deep learning to the volumetric nature of MRI data presents unique challenges. Standard 2D CNNs, often adapted from natural image processing, fail to capture the full three-dimensional spatial context inherent in brain scans, potentially missing subtle volumetric patterns crucial for AD detection. While 3D CNNs address this by processing the entire volume, they typically require significantly more data and computational resources for effective training \cite{yang2021reinventing}.
+
+Medical imaging datasets, particularly for specific conditions like AD, are often orders of magnitude smaller than the vast datasets (like ImageNet) used to train state-of-the-art models in computer vision. This data scarcity poses a major obstacle to training complex 3D deep learning models from scratch. Transfer learning offers a compelling solution to this problem. By leveraging models pre-trained on large-scale datasets from a different but related domain (the 'source' task), we can transfer learned knowledge—such as the ability to recognize edges, textures, and basic shapes—to a new 'target' task where data is limited, such as medical image classification. This approach often leads to faster convergence, better performance, and reduced data requirements \cite{maqsood2019transfer}.
+
+While transfer learning from natural image datasets (like ImageNet) to 2D medical image slices is common, its application to volumetric data is less straightforward. A promising, yet relatively underexplored, avenue involves adapting models pre-trained on large-scale *video* datasets, such as Kinetics-400 \cite{tran2018closer}. Video classification models are inherently designed to process spatio-temporal data (sequences of 2D frames over time), often employing 3D convolutional operations. Conceptually, the temporal dimension in video can be treated as analogous to the third spatial dimension (e.g., the axial depth) in a volumetric MRI scan \cite{tran2018closer, wu20223d}. This research investigates the viability and effectiveness of this specific transfer learning paradigm: adapting video classification models for the task of detecting Alzheimer's disease from 3D structural MRI scans. This adaptation of 3D models pre-trained on video data for volumetric medical imaging remains underexplored compared to 2D or 3D-from-scratch methods.
+
+This dissertation aims to address several key research questions:
+\begin{enumerate}
+    \item How effectively can deep learning models, pre-trained on large video datasets, be adapted via transfer learning for the binary classification of Alzheimer's disease versus cognitively normal controls using structural MRI?
+    \item Which specific 3D convolutional architectures originally designed for video analysis (such as R3D, MC3, R(2+1)D) yield the best performance when transferred to this neuroimaging task?
+    \item What is the impact of specific MRI preprocessing choices—including advanced skull stripping, adaptive resolution enhancement, and the deliberate omission of spatial normalization—on the performance of these transfer learning models?
+    \item How crucial is methodologically rigorous validation, specifically strict subject-level data partitioning, in obtaining realistic performance estimates and avoiding the pitfalls of data leakage common in neuroimaging studies?
+\end{enumerate}
+
+To answer these questions, we utilize data from the Alzheimer's Disease Neuroimaging Initiative (ADNI) \cite{jack2008alzheimer}, a large, multi-site study providing standardized MRI scans and clinical diagnoses. A bespoke preprocessing pipeline was developed, incorporating state-of-the-art skull stripping (SynthStrip \cite{hoopes2022synthstrip}), adaptive cropping to maximize effective resolution within computational constraints, and careful intensity normalization, while notably omitting registration to standard space to preserve native anatomical features potentially distorted by normalization. The core methodology involves fine-tuning several video-pretrained 3D CNN architectures, primarily focusing on variants of the ResNet-18 architecture adapted for 3D inputs (R3D-18, MC3-18, R(2+1)D-18). A specific transfer learning strategy involving partial layer freezing and differential learning rates was employed. Crucially, all experiments were conducted using strict subject-level data splitting and cross-validation to prevent group leakage and ensure that performance metrics reflect true generalization capability to unseen individuals. Performance was evaluated using a comprehensive suite of metrics, including accuracy, balanced accuracy, precision, recall, F1-score, and AUC-ROC.
+
+The novelty of this work lies in several key areas, addressing gaps identified in the literature:
+\begin{enumerate}
+    \item A systematic investigation and evaluation of the video-to-volumetric transfer learning approach specifically for AD detection from structural MRI.
+    \item An empirical comparison of different 3D architectural variants derived from the video domain (R3D, MC3, R(2+1)D) to determine which types of spatio-temporal feature extractors best translate to the spatial patterns relevant in neuroimaging.
+    \item A strong emphasis on methodological rigor, particularly through the implementation and analysis of strict subject-level validation to prevent data leakage and provide more realistic performance estimates than commonly found in related studies \cite{davatzikos2019machine}.
+    \item The development and evaluation of an optimized preprocessing pipeline, including an adaptive cropping strategy, specifically designed for this transfer learning context to balance resolution preservation and computational feasibility.
+\end{enumerate}
+
+This dissertation is structured as follows: Section \ref{sec:literature_review} provides a comprehensive review of the relevant literature, covering the neuropathology of AD, neuroimaging biomarkers, deep learning techniques in medical imaging, existing transfer learning approaches, and the importance of preprocessing and validation methodologies. Section \ref{sec:methodology} details the data acquisition, the developed preprocessing pipeline, the model architectures, the transfer learning strategy, the training framework, and the evaluation methodology, with particular attention to the measures taken to ensure rigorous validation. Section \ref{sec:results} presents the empirical results, including classification performance metrics, cross-validation stability, architectural comparisons, analyses of preprocessing impacts, and insights gained from addressing data leakage. Section \ref{sec:discussion} interprets these results, discussing their clinical implications, technical insights, comparison with existing work, limitations of the study, and the significance of the methodological choices made. Finally, Section \ref{sec:conclusions} summarizes the key findings and contributions of the research and outlines potential directions for future work in this domain. Ultimately, this work seeks to contribute to the development of more robust, reliable, and clinically relevant AI tools for neuroimaging analysis, aiming to support the critical goal of earlier and more accurate Alzheimer's disease detection.
 
 \section{Literature Review}
+\label{sec:literature_review}
 % 2,000 words
 
 This review synthesizes current knowledge across medical and computational domains relevant to Alzheimer's disease detection using deep learning approaches, examining AD neuroimaging biomarkers, computational approaches, and research gaps.
@@ -358,6 +365,7 @@ Despite advances in deep learning for Alzheimer's detection, several key methodo
 These research gaps directly inform the methodology in the next section, which implements a rigorous experimental framework to evaluate video-pretrained model transfer for Alzheimer's disease detection.
 
 \section{Methodology}
+\label{sec:methodology}
 % 2,500 words
 
 \subsection{Data Acquisition and Characteristics}
@@ -562,6 +570,7 @@ Despite computational constraints with training runs requiring approximately 20 
 % architectures. To supplement these quantitative evaluations, various visualization techniques were employed to provide qualitative insights into model behavior, offering deeper understanding beyond numerical metrics alone. This
 
 \section{Results}
+\label{sec:results}
 % 2,000 words
 
 This section presents the quantitative and qualitative results of the proposed transfer learning approach for Alzheimer's disease detection using pre-trained video classification models adapted to MRI analysis. The results demonstrate the effectiveness of 3D convolutional architectures, particularly the R3D-18 model, for identifying structural patterns associated with AD.
@@ -785,6 +794,7 @@ This 20-percentage-point difference highlights the critical importance of proper
 % TODO Visualization of model attention/activation maps XAI
 
 \section{Discussion}
+\label{sec:discussion}
 
 This section critically examines the implications of our findings on transfer learning for Alzheimer's disease detection, contextualizing the results within existing literature while considering technical insights, clinical relevance, and methodological contributions.
 
@@ -927,6 +937,7 @@ The retrospective nature of this study presents inherent limitations for clinica
 These limitations collectively suggest several promising directions for future research, including architectural innovations specifically designed for volumetric medical data, multimodal approaches integrating complementary imaging sequences, and more comprehensive validation strategies that better approximate clinical deployment conditions.
 
 \section{Conclusions}
+\label{sec:conclusions}
 % 1,000 words
 
 % - **Summary of Contributions**
