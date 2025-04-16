@@ -884,7 +884,7 @@ This section critically examines the implications of our findings on transfer le
 
 \subsubsection{Performance Metrics and Clinical Context}
 
-The R3D-18 model achieved 77.26\% test accuracy with balanced performance across precision (77.1\%), recall (79.29\%), and specificity (75.33\%), indicating the model does not disproportionately favor either diagnostic category. This balanced pattern makes it suitable for clinical screening applications where both false positives and negatives carry significant consequences.
+The R3D-18 model achieved 77.26\% test accuracy with balanced performance across precision (77.1\%), recall (79.29\%), and specificity (75.33\%), indicating the model does not disproportionately favor either diagnostic category. This balance makes it suitable for clinical screening applications where both false positives and negatives carry significant consequences.
 
 The ROC-AUC of 0.86 indicates good discriminative ability across classification thresholds, falling within the "good" range (0.8-0.9) in diagnostic test evaluation frameworks~\cite{mandrekar2010receiver}. The narrow standard deviation in accuracy across cross-validation folds (±2.34\%) suggests robust generalization, though the wider variation in recall (±16.01\%) warrants attention, indicating less consistent sensitivity across different subject groups.
 
@@ -897,7 +897,7 @@ Several factors contribute to this performance ceiling:
 \begin{enumerate}
     \item \textbf{Disease heterogeneity}: Structural changes in AD follow variable patterns, with overlap between normal aging and early AD~\cite{vemuri2010role}.
     
-    \item \textbf{Reliance on structural changes}: Structural alterations occur relatively late in the disease cascade~\cite{jack2013tracking}, potentially limiting the discriminative ability of structural MRI alone.
+    \item \textbf{Reliance on structural changes}: Structural alterations occur relatively late in the disease progression~\cite{jack2013tracking}, potentially limiting the discriminative ability of structural MRI alone.
     
     \item \textbf{Resolution limitations}: Despite the adaptive cropping strategy, the 128³ resolution represents a significant reduction from native MRI resolution, potentially obscuring subtle differences.
 \end{enumerate}
@@ -925,6 +925,7 @@ Qualitative review identified several patterns:
     
     \item \textbf{Image quality variations}: Despite preprocessing standardization, subtle quality differences correlated with increased misclassification probability.
 \end{itemize}
+% TODO this shit is straight up made up so have a think if I wana keep it
 
 False negatives ($\sim$20.71\% of AD cases) represent missed diagnostic opportunities. These likely represent subtle or atypical AD presentations, aligning with Jack et al.'s~\cite{jack2013tracking} observation that $\sim$10-20\% of AD cases present with atypical atrophy patterns.
 
