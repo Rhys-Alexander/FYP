@@ -879,6 +879,7 @@ Despite optimization attempts (mixed precision, layer optimization, batch size t
 % TODO Visualization of model attention/activation maps XAI
 
 \section{Discussion}
+
 This section critically examines the implications of our findings on transfer learning for Alzheimer's disease detection, contextualizing the results within existing literature while considering technical insights, clinical relevance, and methodological contributions.
 
 \subsection{Interpretation of Results}
@@ -998,100 +999,46 @@ While transfer learning from video recognition to MRI analysis is viable, the fi
 
 \subsection{Clinical Implications}
 
-The transfer learning approach developed in this study demonstrates potential clinical utility, although there are several important considerations before such systems could be deployed in healthcare settings.
+With a test accuracy of 77.26\%, our model shows potential as a screening or assistive mechanism rather than a standalone diagnostic tool. This performance should be contextualized against both our rigorous subject-level validation methodology and clinical diagnostic accuracy for AD (65-96\%)~\cite{kloppel2008accuracy}.
 
 \subsubsection{Potential as a Diagnostic Aid}
 
-With a test accuracy of 77.26\%, our model's performance, while not sufficient as a standalone diagnostic tool, shows promise as a screening or assistive mechanism in clinical practice. This accuracy level should be contextualized against both the methodological rigor employed—particularly the strict subject-level validation methodology that provides a more realistic estimate of real-world performance than many published studies~\cite{davatzikos2019machine}—and the performance of human experts, which ranges from 65-96\% in clinical diagnostic accuracy for AD~\cite{kloppel2008accuracy}.
-
-Our model offers several clinically relevant advantages over manual assessment:
-
-\begin{itemize}
-    \item \textbf{Consistency}: Unlike human readers with varying expertise and subjective assessment criteria, the model provides standardized evaluations with quantifiable uncertainty measures.
-    
-    \item \textbf{Scalability}: Automated analysis enables rapid processing of large volumes of MRI scans, addressing increasing demands on radiology departments facing workforce shortages.
-    
-    \item \textbf{Balanced performance}: The balanced precision (77.1\%) and recall (79.29\%) suggest potential utility in both identifying possible AD cases and reducing unnecessary specialist referrals.
-\end{itemize}
-
-The model's moderate computational requirements indicate feasibility for deployment in settings with limited computational resources. The preprocessing pipeline and inference architecture can run on consumer-grade hardware, potentially enabling deployment beyond specialized research centers to community hospitals where radiological expertise in neurodegenerative assessment may be limited.
+The model offers several advantages over manual assessment: standardized evaluations with quantifiable uncertainty measures; scalability to address increasing demands on radiology departments; and balanced precision-recall characteristics suitable for clinical screening. Its moderate computational requirements-able to run on consumer hardware-enable deployment beyond specialized research centers to community hospitals where neurological assessment expertise may be limited.
 
 \subsubsection{Integration into Clinical Workflows}
 
-The integration of automated MRI analysis into clinical workflows could take several forms:
+Integration into clinical practice could take several forms: (1) a triage system generating AD probability scores to prioritize high-risk cases for specialist assessment; (2) PACS (Picture Archiving and Communication Systems) integration would allow automatic processing of incoming scans, with results available alongside conventional images; or (3) an on-demand second-opinion service for cases with diagnostic uncertainty. This aligns with growing interest in computer-aided diagnosis systems that augment rather than replace clinical judgment~\cite{kloppel2008accuracy}.
 
-\begin{enumerate}
-    \item \textbf{Triage system}: 
-    \begin{itemize}
-        \item Routine T1-weighted MRI acquisition (already standard in neurological evaluations)
-        \item Automated preprocessing and model analysis
-        \item Generation of an "AD probability score" to supplement radiological review
-        \item Prioritization of high-probability cases for specialist assessment
-    \end{itemize}
-    
-    \item \textbf{PACS integration}: Embedding the model as a background analysis service within Picture Archiving and Communication Systems would allow automatic processing of all incoming structural MRI scans, with results available alongside conventional images.
-    
-    \item \textbf{Second-opinion service}: Implementation as an on-demand analysis tool that radiologists could invoke for cases with diagnostic uncertainty, providing an objective computational assessment as a complementary perspective.
-\end{enumerate}
+\subsubsection{Complementary Role to Biomarkers}
 
-This approach aligns with the growing interest in computer-aided diagnosis (CAD) systems that augment rather than replace clinical judgment~\cite{kloppel2008accuracy}. The system's relatively fast inference time (under one minute on consumer hardware after preprocessing) enables integration into existing workflows without introducing significant delays in image interpretation.
+The most promising application may be as a complementary quantitative biomarker within existing diagnostic frameworks that integrate cognitive assessments and biomarker analysis~\cite{dubois2007research}. The model provides objective quantification through a non-invasive modality, potentially strengthening multimodal diagnostic approaches when combined with CSF biomarkers ($A\beta$ and $tau$) and cognitive assessments. The AUC of 0.86 indicates good discriminative capability that could enhance clinical decision-making.
 
-\subsubsection{Complementary Role to Existing Measures}
+\subsubsection{Early Detection and Monitoring}
 
-The most promising application of deep learning approaches for AD detection may be in their complementary nature to existing diagnostic measures. Current clinical diagnosis integrates cognitive assessments, biomarker analysis, and structural imaging~\cite{dubois2007research}. Our model could serve as an additional quantitative biomarker within this framework, potentially increasing diagnostic confidence when combined with other measures.
+For longitudinal monitoring, automated analysis offers standardized assessment free from inter-reader variability~\cite{kloppel2008accuracy}. The model's ability to process full volumetric data may enable detection of subtle atrophy patterns across distributed brain regions before they manifest as observable symptoms, improving evaluation of disease progression and treatment response as disease-modifying therapies emerge.
 
-The complementary value derives from:
-\begin{itemize}
-    \item \textbf{Objective quantification}: While visual assessment remains qualitative, our model provides quantitative probability scores that could enhance diagnostic confidence when aligned with clinical impression.
-    
-    \item \textbf{Non-invasive nature}: MRI-based detection offers advantages in patient comfort and accessibility compared to cerebrospinal fluid sampling.
-    
-    \item \textbf{Integration potential}: Combined with CSF biomarkers ($A\beta$ and $tau$) and cognitive assessments, computational MRI analysis could strengthen multimodal diagnostic approaches.
-\end{itemize}
+\subsubsection{Implementation Barriers}
 
-The AUC of 0.86 achieved by our model indicates good discriminative capability that could enhance clinical decision-making when considered alongside other diagnostic information.
-
-\subsubsection{Early Detection and Longitudinal Monitoring}
-
-A particularly valuable application may lie in early detection and longitudinal monitoring. Manual visual assessment often misses subtle neuroanatomical changes that precede clinical symptoms~\cite{vemuri2010role}, whereas deep learning approaches can potentially identify patterns beyond human visual discrimination. The model's ability to process full volumetric data may enable detection of subtle atrophy patterns across distributed brain regions before they manifest as observable symptoms.
-
-For longitudinal monitoring, automated analysis offers standardized, quantitative assessment free from the inter-reader variability that affects human readings~\cite{kloppel2008accuracy}. This could improve the detection of disease progression and treatment response evaluation, particularly valuable as disease-modifying therapies for AD continue to emerge.
-
-\subsubsection{Implementation Challenges and Regulatory Pathway}
-
-Despite these promising applications, several implementation challenges must be addressed before clinical deployment:
+If clinical deployment was considered, several challenges must be addressed:
 
 \begin{itemize}
-    \item \textbf{Regulatory approval}: Medical AI systems require rigorous validation and regulatory clearance, with clear guidelines for their intended use and limitations. Classification as a Computer-Aided Detection (CADe) or Computer-Aided Diagnosis (CADx) system would require FDA 510(k) or similar pathways in other jurisdictions.
-    
-    \item \textbf{External validation}: Testing on completely independent datasets from different institutions to verify generalizability across acquisition protocols and patient populations.
-    
-    \item \textbf{Prospective evaluation}: Assessment in a prospective clinical setting to measure real-world performance and workflow impact.
-    
-    \item \textbf{Interpretability requirements}: Clinicians require transparency in the decision-making process beyond what the current model provides. Integration of robust explainable AI techniques would enhance clinical acceptance.
-    
-    \item \textbf{Integration with hospital systems}: Technical challenges in integrating with diverse PACS and electronic health record platforms need resolution.
-    
-    \item \textbf{Clinical responsibility framework}: Clear guidelines on the role of automated analysis in the diagnostic process and associated responsibility frameworks require development.
+  \item Regulatory approval with clear guidelines for the intended use and limitations.
+  
+  \item Assessment in a prospective clinical setting to measure real-world performance and workflow impact.
+  
+  \item Clinicians require robust transparency in the decision-making process beyond what the current model provides.
+  
+  \item Integrating with diverse PACS and electronic health record platforms.
+  
+  \item Clear guidelines on the role of automated analysis in the diagnostic process and associated responsibility frameworks.
 \end{itemize}
 
 A realistic timeline would suggest 2-3 years for validation and regulatory processes before initial clinical deployment could begin, with longitudinal monitoring required to assess clinical impact on diagnostic accuracy and patient outcomes.
 
-\subsubsection{Cost-Effectiveness Considerations}
+From an economic perspective, early diagnosis through automated screening could potentially reduce healthcare costs through earlier intervention and more appropriate care planning~\cite{jack2018nia}. The system could improve referral appropriateness and enhance value extraction from existing MRI data without additional imaging costs, though comprehensive cost-effectiveness analysis requires consideration of implementation costs alongside potential savings.
+% TODO could be aplace to consider in future directions
 
-The economic impact of automated AD detection merits consideration in increasingly resource-constrained healthcare environments. Early diagnosis through automated screening could potentially reduce healthcare costs by enabling earlier intervention and more appropriate care planning~\cite{jack2018nia}. Additionally, more efficient diagnostic pathways could reduce the burden on specialist memory services by improving referral appropriateness.
-
-Potential economic benefits include:
-\begin{itemize}
-    \item Reduced time for radiological interpretation of complex neuroimaging cases
-    \item Earlier and more accurate diagnosis, potentially reducing downstream healthcare costs
-    \item More efficient allocation of specialist neuroimaging expertise
-    \item Enhanced value extraction from already-acquired MRI data without additional imaging costs
-\end{itemize}
-
-However, comprehensive cost-effectiveness analysis requires consideration of implementation costs, including software integration, staff training, and ongoing maintenance, alongside potential savings from improved diagnostic efficiency. Such analysis represents an important direction for future research.
-
-In summary, while our transfer learning approach does not achieve performance suitable for standalone diagnosis, it demonstrates potential as a complementary tool within comprehensive diagnostic frameworks. Its greatest value may lie in screening, early detection, and longitudinal monitoring applications where automated, standardized assessment could complement clinical expertise and enhance diagnostic accuracy.
+In summary, while not suitable for standalone diagnosis, our approach demonstrates potential as a complementary tool within comprehensive diagnostic frameworks, particularly for screening, early detection, and longitudinal monitoring where automated assessment could enhance diagnostic accuracy.
 
 \subsection{Technical Challenges and Solutions}
 
