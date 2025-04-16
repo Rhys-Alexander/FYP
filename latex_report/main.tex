@@ -882,19 +882,17 @@ This section critically examines the implications of our findings on transfer le
 
 \subsection{Interpretation of Results}
 
-\subsubsection{Critical Analysis of Performance Metrics}
+\subsubsection{Performance Metrics and Clinical Context}
 
 The R3D-18 model achieved 77.26\% test accuracy with balanced performance across precision (77.1\%), recall (79.29\%), and specificity (75.33\%), indicating the model does not disproportionately favor either diagnostic category. This balanced pattern makes it suitable for clinical screening applications where both false positives and negatives carry significant consequences.
 
-The ROC-AUC of 0.86 indicates good discriminative ability across classification thresholds, falling within the "good" range (0.8-0.9) in diagnostic test evaluation frameworks~\cite{mandrekar2010receiver}, indicating meaningful predictive power despite not reaching the "excellent" threshold (>0.9) typically sought in mature clinical applications. The narrow standard deviation in accuracy across cross-validation folds (±2.34\%) suggests robust generalization, though the wider variation in recall (±16.01\%) warrants attention, indicating less consistent sensitivity across different subject groups.
+The ROC-AUC of 0.86 indicates good discriminative ability across classification thresholds, falling within the "good" range (0.8-0.9) in diagnostic test evaluation frameworks~\cite{mandrekar2010receiver}. The narrow standard deviation in accuracy across cross-validation folds (±2.34\%) suggests robust generalization, though the wider variation in recall (±16.01\%) warrants attention, indicating less consistent sensitivity across different subject groups.
 
 Learning curves showed relatively rapid convergence (4-8 epochs), attributable to transfer learning initialization. This suggests that despite the substantial domain shift from video action recognition to neuroimaging, pre-trained feature extractors provide a valuable foundation for identifying neuroanatomical patterns.
 
-\subsubsection{Clinical Contextualization of 77\% Accuracy}
+While not meeting the ideal threshold for standalone diagnostic tools (typically >90\%), this performance offers clinical utility in several contexts: as a screening tool to prioritize specialist review, as assistive technology complementing human interpretation, and for longitudinal monitoring where relative assessments may prove more valuable than absolute classifications. This performance was achieved using structural MRI alone, without additional clinical data, cognitive assessments, or complementary modalities.
 
-While not meeting the ideal threshold for standalone diagnostic tools (typically >90\%), this performance offers clinical utility in several contexts: as a screening tool to prioritize specialist review, as assistive technology complementing human interpretation, and for longitudinal monitoring where relative assessments may prove more valuable than absolute classifications.
-
-This performance was achieved using structural MRI alone, without additional clinical data, cognitive assessments, or complementary modalities. Several factors contribute to this performance ceiling:
+Several factors contribute to this performance ceiling:
 
 \begin{enumerate}
     \item \textbf{Disease heterogeneity}: Structural changes in AD follow variable patterns, with overlap between normal aging and early AD~\cite{vemuri2010role}.
@@ -904,40 +902,12 @@ This performance was achieved using structural MRI alone, without additional cli
     \item \textbf{Resolution limitations}: Despite the adaptive cropping strategy, the 128³ resolution represents a significant reduction from native MRI resolution, potentially obscuring subtle differences.
 \end{enumerate}
 
-\subsubsection{Comparison with Human Radiologist Performance}
+\subsubsection{Comparison with Human Performance and Literature}
 
-Contextualizing our model against human performance provides important perspective. The literature shows variability in AD detection among radiologists, with reported accuracy ranges of 70-90\% depending on experience, image quality, and disease severity~\cite{kloppel2008accuracy, frisoni2010clinical}.
+Contextualizing our model against human performance provides important perspective. Klöppel et al.~\cite{kloppel2008accuracy} found experienced neuroradiologists achieved $\sim$80\% accuracy in distinguishing AD from age-matched controls using structural MRI—comparable to our model's performance. However, radiologist performance drops considerably (to 63-70\%) when evaluating early-stage or atypical cases, highlighting a potential niche where algorithmic approaches might complement human expertise.
 
-Klöppel et al.~\cite{kloppel2008accuracy} found experienced neuroradiologists achieved $\sim$80\% accuracy in distinguishing AD from age-matched controls using structural MRI—comparable to our model's performance. However, radiologist performance drops considerably (to 63-70\%) when evaluating early-stage or atypical cases, highlighting a potential niche where algorithmic approaches might complement human expertise.
+While our model's overall accuracy (77.26\%) is slightly below expert radiologist levels, its sensitivity (79.29\%) exceeds the reported average radiologist sensitivity of 70-75\%~\cite{frisoni2010clinical}, suggesting particular utility in reducing missed cases. The model's consistent performance contrasts with significant inter-reader variability in radiological assessment~\cite{kloppel2008accuracy}, suggesting potential for standardizing evaluations.
 
-While our model's overall accuracy (77.26\%) is slightly below expert radiologist levels, its sensitivity (79.29\%) exceeds the reported average radiologist sensitivity of 70-75\%~\cite{frisoni2010clinical}, suggesting particular utility in reducing missed cases. The model's consistent performance (2.34\% standard deviation) contrasts with significant inter-reader variability in radiological assessment~\cite{kloppel2008accuracy}, suggesting potential for standardizing evaluations.
-
-\subsubsection{Significance Relative to Existing Literature}
-
-Our results must be interpreted within the context of previously reported approaches. Table \ref{tab:literature_comparison} presents a comparison with selected published studies employing rigorous validation methodologies.
-
-\begin{table}[htbp]
-\centering
-\begin{tabular}{|l|c|c|p{2.5cm}|p{2.5cm}|}
-\hline
-\textbf{Study} & \textbf{Accuracy} & \textbf{AUC} & \textbf{Validation Method} & \textbf{Architecture} \\
-\hline
-Current work & 77.26\% & 0.86 & Subject-level 3-fold CV & 3D ResNet-18 (transfer) \\
-\hline
-Ebrahimi et al.~\cite{ebrahimi2019transfer} & 93.2\% & 0.95 & Subject-level CV & 3D ResNet-18 (transfer) \\
-\hline
-Lian et al.~\cite{lian2018hierarchical} & 90.3\% & 0.94 & Subject-level LOOCV & Hierarchical CNN \\
-\hline
-Gunawardena et al.~\cite{gunawardena2017applying} & 78.8\% & 0.83 & Subject-level 5-fold CV & 3D CNN (scratch) \\
-\hline
-Klöppel et al.~\cite{kloppel2008accuracy} & 81.1\% & - & Subject-level LOOCV & SVM (manual ROI) \\
-\hline
-\end{tabular}
-\caption{Comparison with existing literature on AD classification using structural MRI}
-\label{tab:literature_comparison}
-\end{table}
-
-% TODO put the accurate values in the table
 Our performance appears lower than some published results, particularly those reporting >90\% accuracy. Key contributing factors include: our stringent subject-level isolation methodology; dataset composition including challenging cases; and hardware constraints limiting resolution and model complexity. The 20-percentage-point difference observed between scan-level partitioning (97.67\% accuracy) and proper subject-level isolation (77.26\% accuracy) aligns with Davatzikos et al.'s~\cite{davatzikos2019machine} warning that data leakage can inflate performance by 10-15\%, suggesting many published results may be substantially overestimated.
 
 Notably, our results align closely with Gunawardena et al.~\cite{gunawardena2017applying}, who employed similarly rigorous validation and reported 78.8\% accuracy, suggesting our approach yields realistic performance estimates for this challenging classification task.
@@ -960,11 +930,9 @@ False negatives ($\sim$20.71\% of AD cases) represent missed diagnostic opportun
 
 False positives ($\sim$24.67\% of CN cases) could lead to unnecessary treatment or psychological burden, likely representing cases with age-related atrophy mimicking AD-related changes. The literature indicates annual atrophy rates of 1-2\% in normal aging versus 3-6\% in AD~\cite{vemuri2010role}, creating a challenging gray area for distinction.
 
-The balanced error profile indicates the model has not developed a strong bias toward either diagnostic category despite the inherent heterogeneity in AD presentations, valuable for clinical screening applications where both sensitivity and specificity carry significant importance.
+\subsection{Technical Insights and Challenges}
 
-\subsection{Technical Insights}
-
-\subsubsection{Transfer Learning from Video Domain}
+\subsubsection{Transfer Learning Effectiveness}
 
 The adaptation of video-pretrained models to MRI classification demonstrated viable cross-domain knowledge transfer despite fundamental differences between spatiotemporal video data and static volumetric MRI. This transfer proved non-trivial, requiring a balanced layer freezing strategy—preserving 25\% of parameters while fine-tuning 75\%—rather than the more extreme approaches common in natural image transfer learning. Notably, attempting to train only the final fully connected layer resulted in complete training failure with numerical instabilities, highlighting the substantial domain shift between video recognition and MRI analysis.
 
@@ -978,177 +946,114 @@ A clear performance progression emerged across architectures with different appr
 
 Contrary to findings in video classification tasks—where factorized convolutions often improve performance through increased non-linearities—our results demonstrate that spatial continuity preservation offered by pure 3D convolutions outweighs these theoretical advantages for structural MRI analysis. This insight challenges the common practice of processing MRI data as independent 2D slices and suggests prioritizing fully 3D approaches, particularly when targeting structural abnormalities with inherently 3D manifestations like hippocampal atrophy.
 
-\subsubsection{Computational Considerations}
+\subsubsection{Computational Challenges and Solutions}
 
 Our implementation revealed counterintuitive efficiency patterns: despite theoretical computational advantages of mixed and factorized convolutions, R3D-18 demonstrated substantially faster training times (1 hour/epoch) compared to MC3-18 (4 hours/epoch) and R(2+1)D (5 hours/epoch). This unexpected efficiency can be attributed to optimized implementations of standard 3D convolutions in modern deep learning frameworks. These findings challenge the assumption that architecturally "lighter" models necessarily translate to computational efficiency gains in practice.
 
-Memory consumption proved deterministic in architectural selection, with input dimensions of 128³ (batch size 2) approaching practical limits of consumer GPU memory (7.5GB usage). Attempts to implement state-of-the-art volumetric Vision Transformers like MViT failed due to prohibitive memory requirements (estimated >32GB). These constraints highlight a fundamental gap between computational resources typically available and those required to apply cutting-edge architectures to high-resolution medical imaging. While cloud computing or specialized hardware could potentially address these constraints, they introduce additional cost, complexity, and potential privacy concerns for clinical deployment.
+Working with high-dimensional volumetric data (128×128×128) placed considerable demands on memory management. Batch size was restricted to 2 samples due to memory limitations, and several optimization techniques were necessary:
 
-These technical insights suggest several directions for future research: development of memory-efficient 3D architectures specifically designed for volumetric medical imaging; exploration of progressive resolution techniques enabling higher effective resolution while maintaining manageable memory footprints; investigation of self-supervised pretraining on unlabeled medical imaging data as an alternative to cross-domain transfer; and implementation of model quantization and pruning to enable deployment of more powerful architectures on consumer hardware.
+\begin{itemize}
+    \item Setting gradients to \texttt{None} rather than zero reduced memory fragmentation
+    \item Explicit cache clearing for Metal Performance Shaders prevented cumulative memory leakage
+    \item Pre-trained weights reduced convergence time from 30+ epochs to 5-10 epochs
+    \item Differential learning rates accelerated task-specific adaptation
+    \item Dual-criterion early stopping saved approximately 40\% of potential training time
+\end{itemize}
 
-While transfer learning from video recognition to MRI analysis is viable, the field would benefit from architectures and training approaches specifically designed for the unique characteristics of volumetric medical imaging data.
+Despite these optimizations, the total training time of approximately 20 hours per run on consumer-grade hardware (M1 Mac) remained a significant constraint, limiting hyperparameter exploration and architectural comparison. Memory constraints prevented implementation of state-of-the-art volumetric Vision Transformers like MViT which required an estimated >32GB of memory.
 
-\subsection{Model Interpretability}
+These technical insights suggest several directions for future research: development of memory-efficient 3D architectures specifically designed for volumetric medical imaging; exploration of progressive resolution techniques enabling higher effective resolution while maintaining manageable memory footprints; and implementation of model quantization and pruning to enable deployment of more powerful architectures on consumer hardware.
+
+% TODO
+% \subsection{Model Interpretability}
 % Things to consider:
 %   - Insights from XAI analysis
 %   - Visualization techniques for model attention/activation
 %   - Correlation with known AD-affected regions
 %   - Clinical relevance of identified features
 
+\subsubsection{Data Leakage Prevention}
+
+Perhaps the most methodologically significant challenge was preventing data leakage—a subtle but crucial issue in longitudinal medical imaging studies. Subject-level isolation revealed more realistic performance ($\sim$77\%) compared to scan-level partitioning (>90\% artificially inflated accuracy). Comprehensive subject tracking ensured complete isolation between dataset partitions, and partition-specific normalization prevented subtle forms of information leakage.
+
+This finding represents a key methodological contribution, highlighting how implementation details dramatically impact reported effectiveness of deep learning approaches in medical imaging.
+
 \subsection{Clinical Implications}
 
 With a test accuracy of 77.26\%, our model shows potential as a screening or assistive mechanism rather than a standalone diagnostic tool. This performance should be contextualized against both our rigorous subject-level validation methodology and clinical diagnostic accuracy for AD (65-96\%)~\cite{kloppel2008accuracy}.
 
-\subsubsection{Potential as a Diagnostic Aid}
+\subsubsection{Potential Applications and Workflow Integration}
 
-The model offers several advantages over manual assessment: standardized evaluations with quantifiable uncertainty measures; scalability to address increasing demands on radiology departments; and balanced precision-recall characteristics suitable for clinical screening. Its moderate computational requirements-able to run on consumer hardware-enable deployment beyond specialized research centers to community hospitals where neurological assessment expertise may be limited.
+The model offers several advantages over manual assessment: standardized evaluations with quantifiable uncertainty measures; scalability to address increasing demands on radiology departments; and balanced precision-recall characteristics suitable for clinical screening. Its moderate computational requirements enable deployment beyond specialized research centers to community hospitals where neurological assessment expertise may be limited.
 
-\subsubsection{Integration into Clinical Workflows}
+Integration into clinical practice could take several forms:
+\begin{enumerate}
+    \item A triage system generating AD probability scores to prioritize high-risk cases for specialist assessment
+    \item PACS integration allowing automatic processing of incoming scans, with results available alongside conventional images
+    \item An on-demand second-opinion service for cases with diagnostic uncertainty
+    \item A complementary quantitative biomarker within existing diagnostic frameworks that integrate cognitive assessments and other biomarker analyses
+\end{enumerate}
 
-Integration into clinical practice could take several forms: (1) a triage system generating AD probability scores to prioritize high-risk cases for specialist assessment; (2) PACS (Picture Archiving and Communication Systems) integration would allow automatic processing of incoming scans, with results available alongside conventional images; or (3) an on-demand second-opinion service for cases with diagnostic uncertainty. This aligns with growing interest in computer-aided diagnosis systems that augment rather than replace clinical judgment~\cite{kloppel2008accuracy}.
-
-\subsubsection{Complementary Role to Biomarkers}
-
-The most promising application may be as a complementary quantitative biomarker within existing diagnostic frameworks that integrate cognitive assessments and biomarker analysis~\cite{dubois2007research}. The model provides objective quantification through a non-invasive modality, potentially strengthening multimodal diagnostic approaches when combined with CSF biomarkers ($A\beta$ and $tau$) and cognitive assessments. The AUC of 0.86 indicates good discriminative capability that could enhance clinical decision-making.
-
-\subsubsection{Early Detection and Monitoring}
+The most promising application may be as part of multimodal diagnostic approaches when combined with CSF biomarkers ($A\beta$ and $tau$) and cognitive assessments. The AUC of 0.86 indicates good discriminative capability that could enhance clinical decision-making.
 
 For longitudinal monitoring, automated analysis offers standardized assessment free from inter-reader variability~\cite{kloppel2008accuracy}. The model's ability to process full volumetric data may enable detection of subtle atrophy patterns across distributed brain regions before they manifest as observable symptoms, improving evaluation of disease progression and treatment response as disease-modifying therapies emerge.
 
 \subsubsection{Implementation Barriers}
 
-If clinical deployment was considered, several challenges must be addressed:
+Several challenges must be addressed before clinical deployment:
 
 \begin{itemize}
-  \item Regulatory approval with clear guidelines for the intended use and limitations.
-  
-  \item Assessment in a prospective clinical setting to measure real-world performance and workflow impact.
-  
-  \item Clinicians require robust transparency in the decision-making process beyond what the current model provides.
-  
-  \item Integrating with diverse PACS and electronic health record platforms.
-  
-  \item Clear guidelines on the role of automated analysis in the diagnostic process and associated responsibility frameworks.
+    \item Regulatory approval with clear guidelines for the intended use and limitations
+    \item Assessment in a prospective clinical setting to measure real-world performance and workflow impact
+    \item Development of robust transparency mechanisms in the decision-making process
+    \item Integration with diverse PACS and electronic health record platforms
+    \item Clear guidelines on the role of automated analysis in the diagnostic process
 \end{itemize}
 
 A realistic timeline would suggest 2-3 years for validation and regulatory processes before initial clinical deployment could begin, with longitudinal monitoring required to assess clinical impact on diagnostic accuracy and patient outcomes.
 
-From an economic perspective, early diagnosis through automated screening could potentially reduce healthcare costs through earlier intervention and more appropriate care planning~\cite{jack2018nia}. The system could improve referral appropriateness and enhance value extraction from existing MRI data without additional imaging costs, though comprehensive cost-effectiveness analysis requires consideration of implementation costs alongside potential savings.
-% TODO could be aplace to consider in future directions
-
-In summary, while not suitable for standalone diagnosis, our approach demonstrates potential as a complementary tool within comprehensive diagnostic frameworks, particularly for screening, early detection, and longitudinal monitoring where automated assessment could enhance diagnostic accuracy.
-
-\subsection{Technical Challenges and Solutions}
-
-This research encountered several significant technical challenges requiring innovative solutions, reflecting broader difficulties in applying deep learning to volumetric medical imaging with limited computational resources.
-
-\subsubsection{Memory Constraints and Optimization}
-
-Working with high-dimensional volumetric data (128×128×128) placed considerable demands on memory management:
-
-\begin{itemize}
-    \item Batch size was restricted to 2 samples due to memory limitations ($\sim$8MB per input volume)
-    \item Setting gradients to \texttt{None} rather than zero reduced memory fragmentation
-    \item Explicit cache clearing was implemented for Metal Performance Shaders to prevent cumulative memory leakage that otherwise led to training crashes after 3-4 epochs.
-\end{itemize}
-
-These constraints directly impacted architectural choices, preventing exploration of transformer-based models like MViT which required an estimated >32GB of memory.
-
-\subsubsection{Training Efficiency and Hardware Limitations}
-
-With each epoch requiring approximately one hour on M1 hardware, techniques to minimize required training epochs were essential:
-
-\begin{itemize}
-    \item Pre-trained weights reduced convergence time from 30+ epochs to 5-10 epochs
-    \item Differential learning rates (10× higher for new layers) accelerated task-specific adaptation
-    \item Minimal, effective augmentations reduced computational overhead
-    \item Dual-criterion early stopping (monitoring both accuracy and loss) saved $\sim$40\% of potential training time
-\end{itemize}
-
-Despite these optimizations, the total training time of $\sim$20 hours per run remained a significant constraint, limiting the extent of hyperparameter exploration and architectural comparison.
-
-The consumer-grade M1 Mac hardware significantly influenced architectural decisions. R3D-18 demonstrated the best balance between performance and training time (1 hour/epoch), while architecturally "lighter" models paradoxically required longer training times (R(2+1)D: 5 hours/epoch), contradicting theoretical efficiency expectations.
-
-These hardware limitations necessitated careful architectural choices that balanced performance against feasibility, ultimately constraining exploration of cutting-edge approaches like transformers that might have yielded further improvements.
-
-\subsubsection{Data Leakage Prevention}
-
-Perhaps the most methodologically significant challenge was preventing data leakage—a subtle but crucial issue in longitudinal medical imaging studies:
-
-\begin{itemize}
-    \item Subject-level isolation revealed more realistic performance ($\sim$77\%) compared to scan-level partitioning (>90\% artificially inflated accuracy)
-    \item Comprehensive subject tracking ensured complete isolation between dataset partitions
-    \item Partition-specific normalization prevented subtle forms of information leakage
-\end{itemize}
-
-This finding represents a key methodological contribution, highlighting how implementation details dramatically impact reported effectiveness of deep learning approaches in medical imaging.
+From an economic perspective, early diagnosis through automated screening could potentially reduce healthcare costs through earlier intervention and more appropriate care planning~\cite{jack2018nia}. The system could improve referral appropriateness and enhance value extraction from existing MRI data without additional imaging costs.
 
 \subsection{Limitations}
 
-Despite promising results, several important limitations affect the interpretation of findings and potential clinical applications.
+\subsubsection{Dataset and Classification Limitations}
 
-\subsubsection{Dataset Considerations}
-
-The exclusive use of the ADNI dataset, while providing standardized high-quality data, introduces potential biases that may affect generalizability:
+The exclusive use of the ADNI dataset introduces potential biases that may affect generalizability:
 
 \begin{itemize}
-    \item \textbf{Demographic representativeness}: The ADNI cohort skews toward higher education levels and predominantly Caucasian participants, potentially limiting generalizability across populations where AD presentation and progression may differ~\cite{jack2008alzheimer}.
-    
-    \item \textbf{Selection bias}: ADNI's stringent criteria potentially exclude patients with significant comorbidities, vascular pathology, or mixed dementia—conditions frequently encountered in clinical practice~\cite{jack2008alzheimer}.
-    
-    \item \textbf{Scanner variability}: Inter-scanner and inter-site variations remain, while augmentations attempted to mitigate this, real-world deployment would encounter greater heterogeneity.
-    
-    \item \textbf{Disease spectrum representation}: By focusing on AD versus CN, the approach excludes theborderline and early-stage presentations, likely overestimating real-world performance where diagnostic uncertainty is prevalent.
+    \item \textbf{Demographic representativeness}: The ADNI cohort skews toward higher education levels and predominantly Caucasian participants, potentially limiting generalizability across populations where AD presentation and progression may differ~\cite{jack2008alzheimer}
+    \item \textbf{Selection bias}: ADNI's stringent criteria potentially exclude patients with significant comorbidities, vascular pathology, or mixed dementia~\cite{jack2008alzheimer}
+    \item \textbf{Scanner variability}: Inter-scanner and inter-site variations remain despite augmentation attempts
+    \item \textbf{Disease spectrum representation}: Focusing on AD versus CN excludes borderline and early-stage presentations
 \end{itemize}
 
-\subsubsection{Binary Classification Simplification}
-
-The deliberate focus on binary classification (AD vs. CN) represents another significant limitation:
+The binary classification approach (AD vs. CN) represents another significant limitation:
 
 \begin{itemize}
-    \item Exclusion of Mild Cognitive Impairment ignores the critical early-stage detection challenge
-    \item Lack of differential diagnosis between various dementia types (vascular, frontotemporal, Lewy body) limits clinical utility
+    \item Exclusion of Mild Cognitive Impairment ignores critical early-stage detection challenges
+    \item Lack of differential diagnosis between various dementia types limits clinical utility
     \item Binary classification misrepresents the continuous progression from normal aging to severe dementia
     \item Mixed pathologies commonly seen in clinical practice are not addressed
 \end{itemize}
 
-\subsubsection{Technical Constraints}
+\subsubsection{Technical and Methodological Limitations}
 
 Resolution and modality limitations affected the model's discriminative capabilities:
 
 \begin{itemize}
-    \item \textbf{Resolution compromise}: The final 128³ resolution still represents a substantial reduction from native MRI resolution ($\sim$256×256×170). This downsampling potentially obscures fine-grained differencesin small regions critical for early AD detection.
-    
-    \item \textbf{Single modality analysis}: Relying solely on T1-weighted structural MRI ignores complementary information available from other sequences (T2, FLAIR, DTI) and modalities (PET) that might enhance diagnostic accuracy, particularly for atypical presentations.
+    \item The 128³ resolution represents a substantial reduction from native MRI resolution, potentially obscuring fine-grained differences
+    \item Relying solely on T1-weighted structural MRI ignores complementary information from other sequences and modalities
 \end{itemize}
 
-\subsubsection{Hardware and Computational Limitations}
-
-Consumer-grade hardware imposed significant limitations that directly affected methodological choices:
+The transfer learning approach introduces fundamental limitations:
 
 \begin{itemize}
-    \item \textbf{Memory limitations}: The available 8GB of memory prevented implementation of state-of-the-art transformer architectures and limited batch size to just 2 samples, potentially affecting training dynamics and convergence characteristics.
-    
-    \item \textbf{Training time constraints}: The approximate 20-hour training time per experiment significantly limited the breadth of hyperparameter optimization and cross-validation approaches. A more comprehensive hyperparameter search might have yielded performance improvements.
-    
-    \item \textbf{Architecture selection bias}: Hardware constraints biased our architectural selection toward memory-efficient models rather than state-of-the-art approaches, preventing exploration of Vision Transformers that have demonstrated superior performance in other computer vision tasks.
-    
-    \item \textbf{Limited ablation studies}: Comprehensive ablation studies isolating the contribution of each methodological decision were impractical given training time constraints, limiting our understanding of which components contribute most significantly to performance.
+    \item Features optimized for video action recognition are inherently different from the structural patterns relevant in AD detection, limiting the effectiveness of knowledge transfer.
+    \item The layer freezing approach used represents one of many possible transfer learning strategies, more sophisticated adaptation methods might better bridge the domain gap.
+    \item Domain mismatch between video classification and structural MRI analysis may limit knowledge transfer effectiveness, potentially explaining the performance ceiling observed.
 \end{itemize}
 
-\subsubsection{Transfer Learning and Methodological Limitations}
-
-The transfer learning approach, while innovative, introduces fundamental limitations:
-
-\begin{itemize}
-    \item \textbf{Domain mismatch}: Transfer learning from video action recognition represents a significant domain shift. While low-level feature extractors transfer reasonably well, higher-level semantic representations likely require substantial adaptation, potentially explaining the performance ceiling observed.
-    
-    \item \textbf{Pre-training task relevance}: Features optimized for capturing motion patterns and temporal dynamics in videos are inherently different from the structural patterns relevant in AD detection, limiting the effectiveness of knowledge transfer.
-    
-    \item \textbf{Adaptation strategy limitations}: The layer freezing approach used represents one of many possible transfer learning strategies, and more sophisticated adaptation methods might better bridge the domain gap.
-\end{itemize}
-
-\subsubsection{Validation and Clinical Translation Barriers}
+\subsubsection{Validation and Deployment Limitations}
 
 The retrospective nature of this study presents inherent limitations for clinical translation:
 
@@ -1164,19 +1069,19 @@ The retrospective nature of this study presents inherent limitations for clinica
     \item \textbf{Lack of radiologist comparison}: Direct comparison with radiologist performance on the same test set was not performed, which would have provided valuable context for the model's relative clinical utility.
 \end{itemize}
 
-\subsubsection{Interpretability and Explainability Limitations}
-% TODO once XAI is done redo this
-Despite visualization attempts, several interpretability limitations remain:
+% \subsubsection{Interpretability and Explainability Limitations}
+% % TODO once XAI is done redo this
+% Despite visualization attempts, several interpretability limitations remain:
 
-\begin{itemize}
-    \item \textbf{Limited explainability}: The current implementation offers limited insight into specific decision-making processes beyond visualization of attention regions. This "black box" nature presents barriers to clinical acceptance.
+% \begin{itemize}
+%     \item \textbf{Limited explainability}: The current implementation offers limited insight into specific decision-making processes beyond visualization of attention regions. This "black box" nature presents barriers to clinical acceptance.
     
-    \item \textbf{Region-specific interpretations}: The lack of feature-specific interpretation (e.g., quantification of specific regional atrophy patterns and their contribution to classification) limits the model's ability to provide clinically actionable insights beyond binary classification.
+%     \item \textbf{Region-specific interpretations}: The lack of feature-specific interpretation (e.g., quantification of specific regional atrophy patterns and their contribution to classification) limits the model's ability to provide clinically actionable insights beyond binary classification.
     
-    \item \textbf{Threshold determination}: The optimal decision threshold for clinical use remains undetermined, with different thresholds potentially appropriate for screening versus diagnostic confirmation contexts.
+%     \item \textbf{Threshold determination}: The optimal decision threshold for clinical use remains undetermined, with different thresholds potentially appropriate for screening versus diagnostic confirmation contexts.
     
-    \item \textbf{Confidence calibration}: The model outputs probability scores that may not be well-calibrated to actual diagnostic confidence, potentially misleading clinical interpretation without proper calibration procedures.
-\end{itemize}
+%     \item \textbf{Confidence calibration}: The model outputs probability scores that may not be well-calibrated to actual diagnostic confidence, potentially misleading clinical interpretation without proper calibration procedures.
+% \end{itemize}
 
 These limitations collectively suggest several promising directions for future research, including architectural innovations specifically designed for volumetric medical data, multimodal approaches integrating complementary imaging sequences, and more comprehensive validation strategies that better approximate clinical deployment conditions.
 
