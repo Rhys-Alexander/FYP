@@ -32,21 +32,20 @@ device = (
 print(f"Using {device} device")
 
 if device == "mps":
-    # Empty CUDA cache periodically during training to avoid memory fragmentation
+    # Empty cache periodically during training to avoid memory fragmentation
     def empty_cache():
         try:
-            # For newer PyTorch versions with MPS cache management
             torch.mps.empty_cache()
         except:
             print("MPS cache management not available")
-            pass  # Ignore if this function doesn't exist"
+            pass
 
 
 class Config:
     """Centralized configuration management"""
 
     def __init__(self, **kwargs):
-        # Default configuration
+        # Default config
         self.architecture = "r3d_18"
         self.dataset = "MRI-AD-CN"
         self.epochs = 20
@@ -98,7 +97,6 @@ class MetricsManager:
             "balanced_accuracy": balanced_accuracy_score(labels, preds),
         }
 
-        # Class-specific accuracy
         for cls in np.unique(labels):
             mask = labels == cls
             if np.any(mask):
@@ -106,7 +104,6 @@ class MetricsManager:
             else:
                 metrics[f"class_{cls}_acc"] = 0
 
-        # Precision, recall, F1
         precision, recall, f1, _ = precision_recall_fscore_support(
             labels, preds, average="binary", zero_division=0
         )
@@ -118,13 +115,11 @@ class MetricsManager:
             }
         )
 
-        # Confusion matrix and derived metrics
         cm = confusion_matrix(labels, preds, labels=[0, 1])
         if cm.shape == (2, 2):
             tn, fp, _, _ = cm.ravel()
             metrics["specificity"] = tn / (tn + fp + 1e-10)
 
-        # ROC AUC and PR AUC (with error handling)
         try:
             metrics["roc_auc"] = roc_auc_score(labels, probs)
         except Exception:
@@ -159,13 +154,11 @@ class MetricsManager:
         if epoch is not None:
             log_dict["epoch"] = epoch
 
-        # Create confusion matrix visualization
         conf_matrix = wandb.plot.confusion_matrix(
             preds=preds, y_true=labels, class_names=["CN", "AD"]
         )
         log_dict["confusion_matrix"] = conf_matrix
 
-        # ROC Curve
         try:
             roc_curve_plot = wandb.plot.roc_curve(
                 y_true=labels,
@@ -177,7 +170,6 @@ class MetricsManager:
         except Exception as e:
             print(f"Error creating ROC curve: {e}")
 
-        # PR Curve
         try:
             precision_vals, recall_vals, _ = precision_recall_curve(labels, probs)
             pr_data = [[x, y] for x, y in zip(recall_vals, precision_vals)]
@@ -189,7 +181,6 @@ class MetricsManager:
         except Exception as e:
             print(f"Error creating PR curve: {e}")
 
-        # Log everything to W&B
         wandb.log(log_dict)
 
         return metrics
@@ -210,13 +201,11 @@ class MRIDataset(Dataset):
         self.apply_augmentation = apply_augmentation
         self.target_size = target_size
 
-        # Validate inputs
         if split not in ["train", "val", "test"]:
             raise ValueError(
                 f"Split must be one of 'train', 'val', 'test', got {split}"
             )
 
-        # Get all files from AD and CN directories
         ad_dir = os.path.join(root_dir, split, "AD")
         cn_dir = os.path.join(root_dir, split, "CN")
 
@@ -234,7 +223,6 @@ class MRIDataset(Dataset):
     def _load_samples(self, ad_dir, cn_dir):
         """Load samples from AD and CN directories"""
 
-        # Generic function to load files from a directory with a specific label
         def load_from_dir(directory, label):
             files = [f for f in os.listdir(directory) if f.endswith(".nii.gz")]
             for file in files:
@@ -242,7 +230,6 @@ class MRIDataset(Dataset):
                 self.labels.append(label)
             return len(files)
 
-        # Load samples from each class directory
         ad_count = load_from_dir(ad_dir, 1)  # AD class
         cn_count = load_from_dir(cn_dir, 0)  # CN class
 
@@ -267,12 +254,11 @@ class MRIDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        # Load the .nii.gz file
+        # load the .nii.gz file
         img_path = self.samples[idx]
         label = self.labels[idx]
 
         try:
-            # Load image using nibabel
             img = nib.load(img_path)
             img_data = img.get_fdata()
 
@@ -293,7 +279,6 @@ class MRIDataset(Dataset):
             # Add channel dimension to numpy array
             img_data = np.expand_dims(img_data, axis=0)
 
-            # Apply transforms
             img_data = self.transforms(img_data)
 
             # Convert to tensor if not already a tensor
@@ -307,7 +292,6 @@ class MRIDataset(Dataset):
 
         except Exception as e:
             print(f"Error loading {img_path}: {e}")
-            # Return a default or raise the exception
             raise
 
 
@@ -315,7 +299,6 @@ def create_datasets_and_loaders(
     data_root, batch_size, use_augmentation, target_size=(128, 128, 128)
 ):
     """Create datasets and data loaders."""
-    # Create datasets
     train_dataset = MRIDataset(
         data_root,
         split="train",
@@ -329,7 +312,6 @@ def create_datasets_and_loaders(
         data_root, split="test", apply_augmentation=False, target_size=target_size
     )
 
-    # Create dataloaders
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
@@ -384,7 +366,6 @@ class ModelManager:
         )
         model = model.to(device)
 
-        # Get parameter statistics
         trainable_params = model.count_trainable_params()
         total_params = model.count_total_params()
         frozen_params = total_params - trainable_params
@@ -439,11 +420,9 @@ class ModelManager:
         return criterion, optimizer, scheduler
 
 
-# Modified 3D ResNet model with layer freezing
 class MRIModel(nn.Module):
     def __init__(self, num_classes=2, freeze_layers=True, architecture="r3d_18"):
         super(MRIModel, self).__init__()
-        # Using a video ResNet and modifying it for 3D MRI
         if architecture == "r3d_18":
             self.resnet = models.r3d_18(weights=models.R3D_18_Weights.KINETICS400_V1)
         elif architecture == "mc3_18":
@@ -480,14 +459,11 @@ class MRIModel(nn.Module):
         in_features = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(in_features, num_classes)
 
-        # Freeze specific layers if requested
         if freeze_layers:
             self._freeze_layers()
 
     def _freeze_layers(self):
         """Freeze most layers of the ResNet model, leaving only layer4 and fc unfrozen"""
-        # Freeze stem and layers 1-3
-        # TODO loook at model in more detail and see where to freeze
         for name, param in self.resnet.named_parameters():
             if "layer4" not in name and "fc" not in name:
                 param.requires_grad = False
@@ -501,7 +477,6 @@ class MRIModel(nn.Module):
         return sum(p.numel() for p in self.parameters())
 
     def forward(self, x):
-        # Input: (B, 1, D, H, W)
         return self.resnet(x)
 
 
@@ -557,7 +532,7 @@ class CheckpointManager:
             "val_loss": val_loss,
             "best_val_acc": best_val_acc,
             "best_val_loss": best_val_loss,
-            "wandb_run_id": wandb.run.id if wandb.run else None,  # Save wandb run ID
+            "wandb_run_id": wandb.run.id if wandb.run else None,
         }
 
         save_path = os.path.join(self.checkpoint_dir, filepath)
@@ -587,7 +562,6 @@ class CheckpointManager:
         """Centralized best checkpoint saving with appropriate naming and logging"""
         updated = False
 
-        # Check if best accuracy improved
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             self.save(
@@ -605,7 +579,6 @@ class CheckpointManager:
             )
             updated = True
 
-        # Check if best loss improved
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             self.save(
@@ -623,7 +596,6 @@ class CheckpointManager:
             )
             updated = True
 
-        # Save regular checkpoint
         self.save(
             model,
             optimizer,
@@ -750,7 +722,6 @@ class TrainerEngine:
             inputs = inputs.to(device)
             labels = labels.to(device)
 
-            # Zero gradients
             self.optimizer.zero_grad(set_to_none=True)
 
             # Forward pass
@@ -807,13 +778,10 @@ class TrainerEngine:
         for epoch in range(start_epoch, num_epochs):
             print(f"\nEpoch {epoch+1}/{num_epochs}")
 
-            # Train
             train_loss, train_acc = self.train_one_epoch(train_loader, epoch)
 
-            # Validate
             val_loss, val_acc = self.evaluate(val_loader, epoch)
 
-            # Update learning rate
             self.scheduler.step()
             current_lr = self.scheduler.get_last_lr()[0]
             print(f"Current learning rate: {current_lr:.6f}")
@@ -821,7 +789,6 @@ class TrainerEngine:
             print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
             print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%")
 
-            # Save checkpoints and update best metrics
             updated, self.best_val_acc, self.best_val_loss = (
                 self.checkpoint_manager.save_best_checkpoint(
                     self.model,
@@ -835,7 +802,6 @@ class TrainerEngine:
                 )
             )
 
-            # Update early stopping counter
             if not updated:
                 early_stopping_counter += 1
                 print(
@@ -845,7 +811,6 @@ class TrainerEngine:
                 early_stopping_counter = 0
                 print("Model improved! Early stopping counter reset.")
 
-            # Check for early stopping
             if early_stopping_counter >= patience:
                 print(f"Early stopping after {epoch+1} epochs without improvement.")
                 break
@@ -865,11 +830,9 @@ class TrainerEngine:
         Returns:
             Tuple of (evaluation loss, evaluation accuracy)
         """
-        # Determine prefix from dataset if not explicitly provided
         if prefix is None:
             prefix = dataloader.dataset.split
 
-        # Load checkpoint if specified
         if checkpoint_path:
             checkpoint = self.checkpoint_manager.get(checkpoint_path)
             self.model.load_state_dict(checkpoint["model_state_dict"])
@@ -879,10 +842,8 @@ class TrainerEngine:
                 f"Loaded checkpoint from epoch {epoch+1} with accuracy {val_acc:.2f}%"
             )
 
-        # Set model to evaluation mode
         self.model.eval()
 
-        # Collect predictions and calculate loss
         running_loss = 0.0
         all_labels = []
         all_preds = []
@@ -912,12 +873,10 @@ class TrainerEngine:
                 all_preds.extend(predicted.cpu().numpy())
                 all_probs.extend(probs[:, 1].cpu().numpy())
 
-        # Convert to numpy arrays
         all_labels = np.array(all_labels)
         all_preds = np.array(all_preds)
         all_probs = np.array(all_probs)
 
-        # Calculate metrics and log to W&B
         loss = running_loss / len(dataloader.dataset)
         metrics = MetricsManager.compute_metrics(all_labels, all_preds, all_probs)
         MetricsManager.log_metrics(
@@ -930,16 +889,12 @@ class TrainerEngine:
 
 
 def main(data_path):
-    # Initialize configuration
     config = Config(data_path=data_path)
 
-    # Create checkpoint manager
     checkpoint_manager = CheckpointManager(config.checkpoint_dir)
 
-    # Check if there's an existing wandb run ID in checkpoint
     wandb_run_id = checkpoint_manager.get_wandb_run_id()
 
-    # Initialize wandb with config, resuming if possible
     wandb.init(
         project="mri-alzheimers-classification",
         config=config.to_dict(),
@@ -948,7 +903,6 @@ def main(data_path):
     )
     config.update(**wandb.config)
 
-    # Create datasets and loaders
     train_dataset, train_loader, val_loader, test_loader, dataset_stats = (
         create_datasets_and_loaders(
             config.data_path,
@@ -958,13 +912,10 @@ def main(data_path):
         )
     )
 
-    # Update config with dataset stats
     config.update(**dataset_stats)
 
-    # Setup model
     model, model_stats = ModelManager.create_model(config)
 
-    # Display model stats
     print(f"Total parameters: {model_stats['total_params']:,}")
     print(
         f"Trainable parameters: {model_stats['trainable_params']:,} "
@@ -975,28 +926,22 @@ def main(data_path):
         f"({model_stats['frozen_params']/model_stats['total_params']:.2%})"
     )
 
-    # Update config with model stats
     config.update(**model_stats)
 
-    # Watch model in wandb
     wandb.watch(model, log="all", log_freq=10)
 
-    # Setup training components
     criterion, optimizer, scheduler = ModelManager.setup_training_components(
         model, train_dataset, config
     )
 
-    # Load checkpoint if exists
     start_epoch, best_val_acc, best_val_loss = checkpoint_manager.load(
         model, optimizer, scheduler
     )
 
-    # Create trainer engine
     trainer = TrainerEngine(model, criterion, optimizer, scheduler, checkpoint_manager)
     trainer.best_val_acc = best_val_acc
     trainer.best_val_loss = best_val_loss
 
-    # Train model
     epochs_trained, best_val_acc, best_val_loss = trainer.train(
         train_loader,
         val_loader,
@@ -1005,7 +950,6 @@ def main(data_path):
         config.patience,
     )
 
-    # Final evaluation on test set
     trainer.evaluate(
         test_loader,
         epoch=config.epochs,
@@ -1013,12 +957,10 @@ def main(data_path):
         checkpoint_path="best_model_acc.pth",
     )
 
-    # Log final metrics
     wandb.run.summary["best_val_acc"] = best_val_acc
     wandb.run.summary["best_val_loss"] = best_val_loss
     wandb.run.summary["total_epochs"] = epochs_trained
 
-    # Close wandb run
     wandb.finish()
 
 
@@ -1038,5 +980,5 @@ if __name__ == "__main__":
     if not os.path.exists("checkpoints"):
         os.makedirs("checkpoints")
 
-    data_path = "./data/adni-cv-splits/fold_1"
+    data_path = "./data/adni-cv-splits/fold_0"
     main(data_path)
