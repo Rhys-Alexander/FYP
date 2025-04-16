@@ -399,7 +399,7 @@ Test & 69 scans (35 subjects) & 69 scans (45 subjects) \\
 
 \subsubsection{Diagnostic Criteria}
 
-Subjects were classified as Alzheimer's Disease (AD) or Cognitively Normal (CN) based on NINCDS-ADRDA criteria. Initially, the dataset contained approximately 33\% AD and 67\% CN cases. To address class imbalance and potential overfitting issues identified during preliminary experiments, additional AD scans were incorporated and CN subjects carefully sampled to achieve a balanced 50/50 diagnostic distribution.
+Subjects were classified as Alzheimer's Disease (AD) or Cognitively Normal (CN) based on NINCDS-ADRDA criteria. Initially, the dataset contained $\sim$33\% AD and $\sim$67\% CN cases. To address class imbalance and potential overfitting issues identified during preliminary experiments, additional AD scans were incorporated and CN subjects carefully sampled to achieve a balanced 50/50 diagnostic distribution.
 
 The binary classification focus (excluding Mild Cognitive Impairment) reflects the clearer structural changes observable in established AD, particularly hippocampal atrophy, which serves as a primary biomarker for disease progression. Subject-level isolation between dataset partitions was strictly enforced to prevent data leakage, ensuring realistic performance assessment for unseen individuals.
 
@@ -407,7 +407,7 @@ The binary classification focus (excluding Mild Cognitive Impairment) reflects t
 
 \subsubsection{Initial Processing and Skull Stripping}
 
-Raw DICOM images were converted to NIfTI format using \texttt{dicom2nifti} with reorientation and compression enabled. This created unified volumetric files suitable for 3D analysis. Skull stripping was performed using SynthStrip, a deep learning-based method that represents the current state-of-the-art for brain extraction~\cite{hoopes2022synthstrip}. It was selected for its superior performance with atrophied brains. Unlike traditional threshold-based methods (e.g., BET), SynthStrip preserved critical cortical boundaries even with atrophied brains and better handled the variability in the ADNI dataset. Despite requiring ~2.5 minutes per scan, the improved quality justified this approach by preventing potential misinterpretation of artifacts as disease-related changes.
+Raw DICOM images were converted to NIfTI format using \texttt{dicom2nifti} with reorientation and compression enabled. This created unified volumetric files suitable for 3D analysis. Skull stripping was performed using SynthStrip, a deep learning-based method that represents the current state-of-the-art for brain extraction~\cite{hoopes2022synthstrip}. It was selected for its superior performance with atrophied brains. Unlike traditional threshold-based methods (e.g., BET), SynthStrip preserved critical cortical boundaries even with atrophied brains and better handled the variability in the ADNI dataset. Despite requiring $\sim$2.5 minutes per scan, the improved quality justified this approach by preventing potential misinterpretation of artifacts as disease-related changes.
 
 \subsubsection{Volume Standardization}
 
@@ -424,7 +424,7 @@ A key methodological innovation was the implementation of an adaptive cropping p
 \end{enumerate}
 % TODO add appendix to crop brain from mri function
 
-This method preserved approximately 35\% more effective resolution for critical structures like the hippocampus compared to naive downsampling. The 128³ dimension balanced preserving anatomical detail with memory constraints for model training. The original uncropped 96³ images compared to the cropped 128³ images are shown in figure \ref{fig:cropping}.
+This method preserved $\sim$35\% more effective resolution for critical structures like the hippocampus compared to naive downsampling. The 128³ dimension balanced preserving anatomical detail with memory constraints for model training. The original uncropped 96³ images compared to the cropped 128³ images are shown in figure \ref{fig:cropping}.
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\textwidth]{figures/cropping.png}
@@ -457,7 +457,7 @@ A methodologically rigorous data splitting approach was implemented to prevent d
 
 \subsubsection{Subject-Level Isolation}
 
-A strict subject-level isolation approach ensured no individual appeared in multiple dataset partitions—a critical decision after initial experiments revealed artificially inflated performance metrics (~90\% accuracy) when subjects were allowed to cross partition boundaries. Complete subject isolation produced a more realistic performance assessment (~77\% accuracy), better reflecting the model's generalization capability to unseen individuals.
+A strict subject-level isolation approach ensured no individual appeared in multiple dataset partitions—a critical decision after initial experiments revealed artificially inflated performance metrics ($\sim$90\% accuracy) when subjects were allowed to cross partition boundaries. Complete subject isolation produced a more realistic performance assessment ($\sim$77\% accuracy), better reflecting the model's generalization capability to unseen individuals.
 
 \subsubsection{Partition Distribution}
 
@@ -494,7 +494,7 @@ Each technique addressed specific neuroimaging considerations: Random noise (30\
 Notably, several common augmentation techniques were deliberately excluded after experimental evaluation showed either no benefit or negative impact:
 
 \begin{itemize}
-    \item \textbf{Geometric transformations} (rotations, flips) significantly increased training time (~20 vs ~5 epochs) without improving validation accuracy, likely due to inherent orientation variability already present in MRI data.
+    \item \textbf{Geometric transformations} (rotations, flips) significantly increased training time ($\sim$20 vs $\sim$5 epochs) without improving validation accuracy, likely due to inherent orientation variability already present in MRI data.
     
     \item \textbf{Random scaling} (0.9-1.1) showed no generalization improvement and potentially disrupted the carefully standardized voxel dimensions.
 \end{itemize}
@@ -552,7 +552,7 @@ These figures represent a significant reduction compared to larger architectures
 
 \subsection{Training Framework and Implementation}
 
-Training was conducted on an M1 Mac using Metal Performance Shaders, with each epoch requiring approximately one hour and full training runs taking ~20 hours. This hardware constrained batch size and architecture selection. Despite attempts at optimization through mixed precision training and CPU-GPU synchronization, computational bottlenecks in the model's forward pass remained.
+Training was conducted on an M1 Mac using Metal Performance Shaders, with each epoch requiring approximately one hour and full training runs taking $\sim$20 hours. This hardware constrained batch size and architecture selection. Despite attempts at optimization through mixed precision training and CPU-GPU synchronization, computational bottlenecks in the model's forward pass remained.
 
 Hyperparameters were selected through systematic experimentation and tracked with Weights \& Biases:
 
@@ -796,7 +796,7 @@ The adaptive cropping strategy yielded substantial performance improvements comp
   \label{fig:cropping_impact}
 \end{figure}
 
-This improvement can be attributed to the preservation of approximately 35\% more effective resolution for critical structures like the hippocampu as well as a 2.37x increase in resolution, allowing the model to better detect subtle atrophy patterns characteristic of AD.
+This improvement can be attributed to the preservation of $\sim$35\% more effective resolution for critical structures like the hippocampu as well as a 2.37x increase in resolution, allowing the model to better detect subtle atrophy patterns characteristic of AD.
 
 \subsubsection{Skull Stripping Quality}
 
@@ -824,7 +824,7 @@ Through systematic experimentation, it was identified that minimal, targeted aug
   \label{fig:augmentation_comparison}
 \end{figure}
 
-The optimal strategy (random noise + gamma adjustment + Z-normalization) improved validation accuracy by approximately 5\% compared to using no augmentation, while the addition of geometric transformations (rotations, flips) not only failed to improve performance, as they all remaied within ±2\% but significantly increased training time from approximately 5 to 20 epochs for comparable convergence.
+The optimal strategy (random noise + gamma adjustment + Z-normalization) improved validation accuracy by $\sim$5\% compared to using no augmentation, while the addition of geometric transformations (rotations, flips) not only failed to improve performance, as they all remaied within ±2\% but significantly increased training time from $\sim$5 to $\sim$20 epochs for comparable convergence.
 
 \subsubsection{Normalization Impact}
 
@@ -860,11 +860,11 @@ Training on a consumer-grade M1 Mac using Metal Performance Shaders demonstrated
 \hline
 \textbf{Architecture} & \textbf{Training Time/Epoch} & \textbf{Memory Usage} \\
 \hline
-R3D-18 & ~1 hour & 7.5 GB \\
+R3D-18 & $\sim$1 hour & 7.5 GB \\
 \hline
-MC3-18 & ~4 hours & 7.6 GB \\
+MC3-18 & $\sim$4 hours & 7.6 GB \\
 \hline
-R(2+1)D-18 & ~5 hours & 7.4 GB \\
+R(2+1)D-18 & $\sim$5 hours & 7.4 GB \\
 \hline
 MViT & Failed (OOM) & >32 GB (estimated) \\
 \hline
@@ -885,59 +885,37 @@ This section critically examines the implications of our findings on transfer le
 
 \subsubsection{Critical Analysis of Performance Metrics}
 
-The R3D-18 model achieved a test accuracy of 77.26\% for binary classification of AD versus CN subjects, with a balanced performance profile across precision (77.1\%), recall (79.29\%), and specificity (75.33\%). This balanced pattern suggests the model does not disproportionately favor either diagnostic category, making it suitable for clinical screening applications where both false positives and false negatives carry significant consequences.
+The R3D-18 model achieved 77.26\% test accuracy with balanced performance across precision (77.1\%), recall (79.29\%), and specificity (75.33\%), indicating the model does not disproportionately favor either diagnostic category. This balanced pattern makes it suitable for clinical screening applications where both false positives and negatives carry significant consequences.
 
-The ROC-AUC of 0.86 represents a stronger indicator of model discriminative ability than raw accuracy, as it characterizes performance across all possible classification thresholds. This value falls within the "good" range (0.8-0.9) of diagnostic test evaluation frameworks~\cite{mandrekar2010receiver}, indicating meaningful predictive power despite not reaching the "excellent" threshold (>0.9) typically sought in mature clinical applications.
+The ROC-AUC of 0.86 indicates good discriminative ability across classification thresholds, falling within the "good" range (0.8-0.9) in diagnostic test evaluation frameworks~\cite{mandrekar2010receiver}, indicating meaningful predictive power despite not reaching the "excellent" threshold (>0.9) typically sought in mature clinical applications. The narrow standard deviation in accuracy across cross-validation folds (±2.34\%) suggests robust generalization, though the wider variation in recall (±16.01\%) warrants attention, indicating less consistent sensitivity across different subject groups.
 
-The narrow standard deviation in accuracy across cross-validation folds (±2.34\%) suggests robust generalization to unseen subjects, though the wider variation in recall (±16.01\%) warrants attention. This recall variability indicates that the model's ability to identify true AD cases fluctuates more significantly depending on the specific subjects in the test set—a finding that has implications for potential clinical deployment where consistent sensitivity is crucial.
-
-The learning curves indicate relatively rapid convergence (typically 4-8 epochs), attributable to transfer learning initialization. This quick adaptation suggests that despite the substantial domain shift from video action recognition to neuroimaging, pre-trained feature extractors provide a valuable foundation for neuroanatomical pattern recognition.
+Learning curves showed relatively rapid convergence (4-8 epochs), attributable to transfer learning initialization. This suggests that despite the substantial domain shift from video action recognition to neuroimaging, pre-trained feature extractors provide a valuable foundation for identifying neuroanatomical patterns.
 
 \subsubsection{Clinical Contextualization of 77\% Accuracy}
 
-A 77.26\% accuracy for AD classification must be evaluated within the broader context of clinical neuroimaging diagnostics. While not meeting the ideal threshold for standalone diagnostic tools (typically >90\%), this performance level offers valuable clinical utility in several contexts:
+While not meeting the ideal threshold for standalone diagnostic tools (typically >90\%), this performance offers clinical utility in several contexts: as a screening tool to prioritize specialist review, as assistive technology complementing human interpretation, and for longitudinal monitoring where relative assessments may prove more valuable than absolute classifications.
 
-\begin{itemize}
-    \item \textbf{Screening application}: The balanced sensitivity-specificity profile makes the model suitable as a triage tool that could prioritize cases for specialist review, potentially expediting the diagnostic process for patients showing strongest AD likelihood indicators.
-    
-    \item \textbf{Assistive technology}: As a second reader, the model could complement human interpretation, particularly in resource-constrained settings where specialist radiologist availability is limited.
-    
-    \item \textbf{Longitudinal monitoring}: The consistency in performance suggests potential value for tracking structural changes over time, where relative assessments may prove more valuable than absolute diagnostic classifications.
-\end{itemize}
-
-It is worth noting that this performance was achieved using structural MRI alone, without additional clinical data, cognitive assessments, or complementary imaging modalities that typically inform clinical diagnosis. In this light, the 77\% accuracy represents a promising foundation for multimodal approaches that more closely mirror clinical diagnostic processes.
-
-Several factors contribute to this performance ceiling:
+This performance was achieved using structural MRI alone, without additional clinical data, cognitive assessments, or complementary modalities. Several factors contribute to this performance ceiling:
 
 \begin{enumerate}
-    \item \textbf{Disease heterogeneity}: As noted by Vemuri et al.~\cite{vemuri2010role}, structural changes in AD follow characteristic but variable patterns, with significant overlap between normal aging and early AD.
+    \item \textbf{Disease heterogeneity}: Structural changes in AD follow variable patterns, with overlap between normal aging and early AD~\cite{vemuri2010role}.
     
-    \item \textbf{Reliance on structural changes alone}: The model depends exclusively on T1-weighted structural patterns, without functional, metabolic, or clinical data. While hippocampal atrophy serves as a primary biomarker, Jack et al.~\cite{jack2013tracking} demonstrated that structural changes occur relatively late in the disease cascade (see Figure \ref{fig:biomarker_progression}), potentially limiting the discriminative ability of structural MRI alone.
+    \item \textbf{Reliance on structural changes}: Structural alterations occur relatively late in the disease cascade~\cite{jack2013tracking}, potentially limiting the discriminative ability of structural MRI alone.
     
-    \item \textbf{Resolution limitations}: Despite the adaptive cropping strategy preserving more anatomical detail than naive downsampling, the final 128³ resolution still represents a significant reduction from native MRI resolution, potentially obscuring subtle structural differences.
+    \item \textbf{Resolution limitations}: Despite the adaptive cropping strategy, the 128³ resolution represents a significant reduction from native MRI resolution, potentially obscuring subtle differences.
 \end{enumerate}
 
 \subsubsection{Comparison with Human Radiologist Performance}
 
-Contextualizing our model's performance against human radiologists provides important perspective. The literature indicates significant variability in AD detection accuracy among radiologists, with reported ranges of 70-90\% depending on experience level, image quality, and disease severity~\cite{kloppel2008accuracy, frisoni2010clinical}.
+Contextualizing our model against human performance provides important perspective. The literature shows variability in AD detection among radiologists, with reported accuracy ranges of 70-90\% depending on experience, image quality, and disease severity~\cite{kloppel2008accuracy, frisoni2010clinical}.
 
-Klöppel et al.~\cite{kloppel2008accuracy} found that experienced neuroradiologists achieved approximately 80\% accuracy in distinguishing AD from age-matched controls using structural MRI—a benchmark our model approaches. However, radiologist performance drops considerably (to 63-70\%) when evaluating early-stage or atypical cases, highlighting a potential niche where algorithmic approaches might complement human expertise.
+Klöppel et al.~\cite{kloppel2008accuracy} found experienced neuroradiologists achieved $\sim$80\% accuracy in distinguishing AD from age-matched controls using structural MRI—comparable to our model's performance. However, radiologist performance drops considerably (to 63-70\%) when evaluating early-stage or atypical cases, highlighting a potential niche where algorithmic approaches might complement human expertise.
 
-Importantly, while our model's overall accuracy (77.26\%) is slightly below expert radiologist levels, its sensitivity (79.29\%) exceeds the reported average radiologist sensitivity of 70-75\% for comparable tasks~\cite{frisoni2010clinical}. This suggests particular utility in reducing missed cases, albeit at the cost of slightly more false positives than expert readers might generate.
-
-Several important distinctions exist between human and algorithmic assessment. Radiologists typically:
-\begin{enumerate}
-    \item Incorporate prior knowledge of normal age-related changes
-    \item Have access to multiple imaging sequences and clinical information
-    \item Consider differential diagnoses beyond the binary AD/CN distinction
-    \item Focus attention on known disease-specific regions (hippocampus, entorhinal cortex)
-\end{enumerate}
-
-The model's consistent performance across folds (2.34\% standard deviation) also contrasts with the significant inter-reader variability noted in radiological assessment~\cite{kloppel2008accuracy}, suggesting a potential role in standardizing evaluations.
+While our model's overall accuracy (77.26\%) is slightly below expert radiologist levels, its sensitivity (79.29\%) exceeds the reported average radiologist sensitivity of 70-75\%~\cite{frisoni2010clinical}, suggesting particular utility in reducing missed cases. The model's consistent performance (2.34\% standard deviation) contrasts with significant inter-reader variability in radiological assessment~\cite{kloppel2008accuracy}, suggesting potential for standardizing evaluations.
 
 \subsubsection{Significance Relative to Existing Literature}
 
-Our results must be interpreted within the context of previously reported deep learning approaches for AD classification. Table \ref{tab:literature_comparison} presents a comparison with selected published studies that employed rigorous validation methodologies.
+Our results must be interpreted within the context of previously reported approaches. Table \ref{tab:literature_comparison} presents a comparison with selected published studies employing rigorous validation methodologies.
 
 \begin{table}[htbp]
 \centering
@@ -961,114 +939,55 @@ Klöppel et al.~\cite{kloppel2008accuracy} & 81.1\% & - & Subject-level LOOCV & 
 \end{table}
 
 % TODO put the accurate values in the table
+Our performance appears lower than some published results, particularly those reporting >90\% accuracy. Key contributing factors include: our stringent subject-level isolation methodology; dataset composition including challenging cases; and hardware constraints limiting resolution and model complexity. The 20-percentage-point difference observed between scan-level partitioning (97.67\% accuracy) and proper subject-level isolation (77.26\% accuracy) aligns with Davatzikos et al.'s~\cite{davatzikos2019machine} warning that data leakage can inflate performance by 10-15\%, suggesting many published results may be substantially overestimated.
 
-Our performance metrics appear lower than some published results, particularly those reporting >90\% accuracy. Several factors may explain these differences:
-
-\begin{enumerate}
-    \item \textbf{Stringent validation methodology}: Our strict subject-level isolation may yield more conservative but realistic performance estimates. As demonstrated in our group leakage experiments, scan-level partitioning can inflate accuracy by approximately 20 percentage points.
-    
-    \item \textbf{Dataset composition}: The specific subject selection, disease severity distribution, and proportion of borderline cases significantly impacts reported performance. Our balanced dataset deliberately included challenging cases to assess real-world generalizability.
-    
-    \item \textbf{Hardware constraints}: The 128³ resolution represents a compromise due to memory limitations, whereas some studies leverage higher-resolution inputs or ensemble approaches requiring greater computational resources.
-\end{enumerate}
-
-The observed 20-percentage-point difference between scan-level partitioning (97.67\ accuracy) and proper subject-level isolation (77.26\% accuracy) aligns with Davatzikos et al.'s~\cite{davatzikos2019machine} warning that data leakage can inflate performance by 10-15\%. This suggests many published results may be substantially overestimated if they employed scan-level validation.
-
-Notably, our results align closely with Gunawardena et al.~\cite{gunawardena2017applying}, who employed similarly rigorous validation and reported 78.8\% accuracy. The consistency with methodologically sound studies suggests our approach yields realistic performance estimates for this challenging classification task.
+Notably, our results align closely with Gunawardena et al.~\cite{gunawardena2017applying}, who employed similarly rigorous validation and reported 78.8\% accuracy, suggesting our approach yields realistic performance estimates for this challenging classification task.
 
 \subsubsection{Analysis of Classification Errors}
 
-Examining the distribution and characteristics of misclassified cases provides insight into model limitations. Analysis of the confusion matrix revealed approximately balanced errors: 21\% false negatives (AD classified as CN) and 25\% false positives (CN classified as AD).
+Examining misclassified cases provides insight into model limitations. Analysis revealed approximately balanced errors: 21\% false negatives (AD classified as CN) and 25\% false positives (CN classified as AD).
 
-Several patterns emerged from qualitative review of misclassified cases:
+Qualitative review identified several patterns:
 
 \begin{itemize}
-    \item \textbf{Age-related atrophy}: A substantial proportion of false positives occurred in older cognitively normal subjects (>80 years) exhibiting age-associated atrophy patterns that partially resemble neurodegenerative changes. This suggests the model may struggle to distinguish normal aging from pathological neurodegeneration in borderline cases.
+    \item \textbf{Age-related atrophy}: False positives frequently occurred in older cognitively normal subjects exhibiting age-associated atrophy patterns resembling neurodegeneration, suggesting difficulty distinguishing normal aging from pathological changes in borderline cases.
     
-    \item \textbf{Atypical presentations}: False negatives were more common in AD cases with atypical atrophy patterns or predominantly focal temporal lobe involvement rather than the classic widespread pattern. This indicates potential model bias toward prototypical disease presentations.
+    \item \textbf{Atypical presentations}: False negatives were more common in AD cases with atypical atrophy patterns or predominantly focal temporal lobe involvement rather than classic widespread patterns, indicating potential model bias toward prototypical presentations.
     
-    \item \textbf{Image quality variations}: Despite preprocessing standardization, subtle quality differences (motion artifacts, contrast variations) correlated with increased misclassification probability, highlighting a potential area for future robustness improvements.
+    \item \textbf{Image quality variations}: Despite preprocessing standardization, subtle quality differences correlated with increased misclassification probability.
 \end{itemize}
 
-False negatives (approximately 20.71\% of AD cases) represent missed diagnostic opportunities where intervention might be beneficial. These cases likely represent AD presentations with more subtle structural changes or atypical atrophy patterns that diverge from the characteristic hippocampal involvement. Jack et al.~\cite{jack2013tracking} noted that approximately 10-20\% of AD cases present with atypical atrophy patterns, which may account for a substantial portion of these misclassifications.
+False negatives ($\sim$20.71\% of AD cases) represent missed diagnostic opportunities. These likely represent subtle or atypical AD presentations, aligning with Jack et al.'s~\cite{jack2013tracking} observation that $\sim$10-20\% of AD cases present with atypical atrophy patterns.
 
-False positives (approximately 24.67\% of CN cases) are equally concerning as they could lead to unnecessary treatment or psychological burden. These likely represent cases with age-related atrophy patterns that mimic AD-related changes. The hippocampal atrophy literature indicates annual atrophy rates of 1-2\% in normal aging compared to 3-6\% in AD~\cite{vemuri2010role}, creating a gray area where distinction becomes challenging.
+False positives ($\sim$24.67\% of CN cases) could lead to unnecessary treatment or psychological burden, likely representing cases with age-related atrophy mimicking AD-related changes. The literature indicates annual atrophy rates of 1-2\% in normal aging versus 3-6\% in AD~\cite{vemuri2010role}, creating a challenging gray area for distinction.
 
-The balanced error profile suggests that the model has not developed a strong bias toward either diagnostic category despite the inherent heterogeneity in AD presentations. This balanced performance is particularly valuable in clinical screening applications where both sensitivity and specificity carry significant importance.
+The balanced error profile indicates the model has not developed a strong bias toward either diagnostic category despite the inherent heterogeneity in AD presentations, valuable for clinical screening applications where both sensitivity and specificity carry significant importance.
 
 \subsection{Technical Insights}
 
 \subsubsection{Transfer Learning from Video Domain}
 
-The successful adaptation of video-pretrained models to MRI classification demonstrates a viable cross-domain knowledge transfer pathway despite fundamental differences between spatiotemporal video data and static volumetric MRI. Our findings revealed that this transfer is non-trivial, with several key insights:
+The adaptation of video-pretrained models to MRI classification demonstrated viable cross-domain knowledge transfer despite fundamental differences between spatiotemporal video data and static volumetric MRI. This transfer proved non-trivial, requiring a balanced layer freezing strategy—preserving 25\% of parameters while fine-tuning 75\%—rather than the more extreme approaches common in natural image transfer learning. Notably, attempting to train only the final fully connected layer resulted in complete training failure with numerical instabilities, highlighting the substantial domain shift between video recognition and MRI analysis.
 
-\begin{itemize}
-    \item \textbf{Layer freezing strategy}: The optimal approach involved a balanced strategy—freezing early layers (25\% of parameters) while fine-tuning later layers (75\%)—rather than the more extreme approaches often used in natural image transfer learning. Notably, attempting to train only the final fully connected layer resulted in complete training failure with numerical instabilities, highlighting the substantial domain shift between video recognition and MRI analysis.
-    
-    \item \textbf{Convergence behavior}: Despite this domain gap, models converged relatively quickly (5-8 epochs), suggesting that low-level features learned from video data (edges, textures, gradients) remain useful for identifying structural patterns in brain MRI.
-    
-    \item \textbf{Differential learning rates}: The implementation of higher learning rates for newly initialized layers (10× differential) proved critical for successful knowledge transfer, allowing aggressive adaptation at the task-specific layers while making conservative updates to the pretrained feature extractors.
-\end{itemize}
+Despite this domain gap, models converged relatively quickly (5-8 epochs), suggesting that low-level features learned from video data remain useful for identifying structural patterns in brain MRI. The implementation of differential learning rates for newly initialized layers (10× higher) proved critical, allowing aggressive adaptation at the task-specific layers while making conservative updates to pretrained feature extractors.
 
-These findings suggest that while video-to-MRI transfer is viable, the extreme domain shift necessitates substantial adaptation rather than the "lightweight" fine-tuning often sufficient in natural image transfer learning applications.
+These findings indicate that while video-to-MRI transfer is viable, the domain shift necessitates substantial adaptation rather than the "lightweight" fine-tuning often sufficient in natural image transfer applications.
 
-\subsubsection{Superiority of Fully 3D Approaches}
+\subsubsection{Dimensional Processing Impact}
 
-A clear performance progression emerged when comparing architectures with different approaches to dimensional processing:
+A clear performance progression emerged across architectures with different approaches to dimensional processing. The fully 3D convolutional approach (R3D-18) consistently outperformed both mixed convolution (MC3-18) and factorized convolution (R(2+1)D-18) architectures, with performance declining as architectures incorporated more 2D elements. This strongly suggests that preserving complete volumetric spatial context is crucial for detecting the subtle structural patterns characteristic of neurodegenerative disease.
 
-\begin{itemize}
-    \item The fully 3D convolutional approach (R3D-18) consistently outperformed both mixed convolution (MC3-18) and factorized convolution (R(2+1)D-18) architectures.
-    
-    \item This progressive performance decline as architectures incorporated more 2D elements strongly suggests that preserving complete volumetric spatial context is crucial for detecting the subtle structural patterns characteristic of neurodegenerative disease.
-    
-    \item Contrary to findings in video classification tasks—where factorized convolutions often improve performance through increased non-linearities—our results demonstrate that the spatial continuity preservation of pure 3D convolutions outweighs these theoretical advantages for structural MRI analysis.
-\end{itemize}
+Contrary to findings in video classification tasks—where factorized convolutions often improve performance through increased non-linearities—our results demonstrate that spatial continuity preservation offered by pure 3D convolutions outweighs these theoretical advantages for structural MRI analysis. This insight challenges the common practice of processing MRI data as independent 2D slices and suggests prioritizing fully 3D approaches, particularly when targeting structural abnormalities with inherently 3D manifestations like hippocampal atrophy.
 
-This insight challenges the common practice of processing MRI data as independent 2D slices and suggests that the field should prioritize fully 3D approaches, particularly when targeting structural abnormalities with inherently 3D manifestations like hippocampal atrophy.
+\subsubsection{Computational Considerations}
 
-\subsubsection{Computational Efficiency Trade-offs}
+Our implementation revealed counterintuitive efficiency patterns: despite theoretical computational advantages of mixed and factorized convolutions, R3D-18 demonstrated substantially faster training times (1 hour/epoch) compared to MC3-18 (4 hours/epoch) and R(2+1)D (5 hours/epoch). This unexpected efficiency can be attributed to optimized implementations of standard 3D convolutions in modern deep learning frameworks. These findings challenge the assumption that architecturally "lighter" models necessarily translate to computational efficiency gains in practice.
 
-Our implementation on consumer-grade hardware revealed counterintuitive efficiency patterns:
+Memory consumption proved deterministic in architectural selection, with input dimensions of 128³ (batch size 2) approaching practical limits of consumer GPU memory (7.5GB usage). Attempts to implement state-of-the-art volumetric Vision Transformers like MViT failed due to prohibitive memory requirements (estimated >32GB). These constraints highlight a fundamental gap between computational resources typically available and those required to apply cutting-edge architectures to high-resolution medical imaging. While cloud computing or specialized hardware could potentially address these constraints, they introduce additional cost, complexity, and potential privacy concerns for clinical deployment.
 
-\begin{itemize}
-    \item Despite theoretical computational advantages of mixed and factorized convolutions, R3D-18 demonstrated substantially faster training times (1 hour/epoch) compared to MC3-18 (4 hours/epoch) and R(2+1)D (5 hours/epoch).
-    
-    \item This unexpected efficiency can be attributed to optimized implementations of standard 3D convolutions in modern deep learning frameworks and potentially less efficient memory access patterns in the hybrid approaches.
-    
-    \item These findings challenge the assumption that architecturally "lighter" models necessarily translate to computational efficiency gains in practice, particularly on consumer hardware with specific acceleration capabilities.
-\end{itemize}
+These technical insights suggest several directions for future research: development of memory-efficient 3D architectures specifically designed for volumetric medical imaging; exploration of progressive resolution techniques enabling higher effective resolution while maintaining manageable memory footprints; investigation of self-supervised pretraining on unlabeled medical imaging data as an alternative to cross-domain transfer; and implementation of model quantization and pruning to enable deployment of more powerful architectures on consumer hardware.
 
-For researchers working with limited computational resources, these results suggest that standard 3D CNN architectures may offer the best balance of performance and efficiency, contrary to what theoretical operation counts might predict.
-
-\subsubsection{Memory Constraints and Architecture Selection}
-
-Perhaps the most significant technical limitation encountered was memory consumption, which proved deterministic in architectural selection:
-
-\begin{itemize}
-    \item Input dimensions of 128³ with batch size 2 approached the practical limits of consumer GPU memory (7.5GB usage), constraining exploration of deeper architectures or larger input dimensions.
-    
-    \item Attempts to implement state-of-the-art volumetric Vision Transformers like MViT failed due to prohibitive memory requirements (estimated >32GB for comparable input dimensions).
-    
-    \item These constraints highlight a fundamental gap between the computational resources typically available in research settings and those required to apply cutting-edge architectures to high-resolution medical imaging.
-\end{itemize}
-
-The memory limitations encountered represent a significant translational barrier for advanced deep learning techniques in medical imaging. While cloud computing or specialized hardware could potentially address these constraints, they introduce additional cost, complexity, and potential privacy concerns for clinical deployment.
-
-\subsubsection{Implications for Future Research}
-
-These technical insights suggest several directions for future research:
-
-\begin{enumerate}
-    \item Development of memory-efficient 3D architectures specifically designed for volumetric medical imaging rather than adapting video models.
-    
-    \item Exploration of progressive resolution techniques that could enable higher effective resolution while maintaining manageable memory footprints.
-    
-    \item Investigation of self-supervised pretraining on unlabeled medical imaging data as an alternative to cross-domain transfer from video.
-    
-    \item Implementation of model quantization, pruning, and other efficiency techniques to enable deployment of more powerful architectures on consumer hardware.
-\end{enumerate}
-
-Our results demonstrate that while transfer learning from video recognition to MRI analysis is viable, the field would benefit from architectures and training approaches specifically designed for the unique characteristics of volumetric medical imaging data.
+While transfer learning from video recognition to MRI analysis is viable, the field would benefit from architectures and training approaches specifically designed for the unique characteristics of volumetric medical imaging data.
 
 \subsection{Model Interpretability}
 % Things to consider:
@@ -1183,7 +1102,7 @@ The development and implementation of 3D transfer learning models for Alzheimer'
 Working with high-dimensional volumetric data (128×128×128) placed considerable demands on computational resources. The primary challenge was managing memory usage within the constraints of consumer-grade hardware:
 
 \begin{itemize}
-    \item \textbf{Adaptive batch sizing:} With each volumetric input requiring approximately 8MB in floating-point precision, batch size was restricted to 2 samples, balancing training stability with memory limitations. Larger batch sizes resulted in out-of-memory errors despite various optimization attempts.
+    \item \textbf{Adaptive batch sizing:} With each volumetric input requiring $\sim$8MB in floating-point precision, batch size was restricted to 2 samples, balancing training stability with memory limitations. Larger batch sizes resulted in out-of-memory errors despite various optimization attempts.
     
     \item \textbf{Gradient optimization:} Setting gradients to \texttt{None} rather than zero reduced memory fragmentation compared to conventional zeroing approaches, providing marginal improvements in memory efficiency.
     
@@ -1203,10 +1122,10 @@ With each epoch requiring approximately one hour on M1 hardware, techniques to m
     
     \item \textbf{Efficient augmentation:} The strategic selection of minimal, effective augmentations (noise, gamma, normalization) reduced training time compared to more extensive transformation sets that added computational overhead without performance benefits.
     
-    \item \textbf{Early stopping optimization:} The dual-criterion early stopping approach (monitoring both accuracy and loss) prevented unnecessary training while ensuring convergence, saving approximately 40\% of potential training time.
+    \item \textbf{Early stopping optimization:} The dual-criterion early stopping approach (monitoring both accuracy and loss) prevented unnecessary training while ensuring convergence, saving $\sim$40\% of potential training time.
 \end{itemize}
 
-Despite these optimizations, the total training time of approximately 20 hours per run remained a significant constraint, limiting the extent of hyperparameter exploration and architectural comparison.
+Despite these optimizations, the total training time of $\sim$20 hours per run remained a significant constraint, limiting the extent of hyperparameter exploration and architectural comparison.
 
 \subsubsection{Hardware Limitations and Architecture Selection}
 
@@ -1229,11 +1148,11 @@ The preprocessing pipeline presented a critical balance between computational ef
 \begin{itemize}
     \item \textbf{Skull stripping quality:} Initial experiments with simpler threshold-based methods produced inconsistent results, particularly with atrophied brains characteristic of AD. Implementing SynthStrip improved consistency and preserved cortical boundaries, though at the cost of increased preprocessing time (2.5 minutes per scan).
     
-    \item \textbf{Adaptive cropping strategy:} The implemented approach preserved approximately 35\% more effective resolution for critical structures compared to naive downsampling, significantly improving classification performance despite increased processing time.
+    \item \textbf{Adaptive cropping strategy:} The implemented approach preserved $\sim$35\% more effective resolution for critical structures compared to naive downsampling, significantly improving classification performance despite increased processing time.
     
-    \item \textbf{Registration omission:} The deliberate decision to omit spatial normalization to standard space not only preserved native atrophy patterns but also eliminated a computationally expensive step from the preprocessing pipeline, reducing preprocessing time by approximately 40\% per scan.
+    \item \textbf{Registration omission:} The deliberate decision to omit spatial normalization to standard space not only preserved native atrophy patterns but also eliminated a computationally expensive step from the preprocessing pipeline, reducing preprocessing time by $\sim$40\% per scan.
     
-    \item \textbf{Storage efficiency:} The full ADNI dataset exceeded 1TB in raw form. A streamlined processing pipeline with intelligent caching and intermediate file compression reduced storage requirements by approximately 85\% while maintaining all diagnostically relevant information.
+    \item \textbf{Storage efficiency:} The full ADNI dataset exceeded 1TB in raw form. A streamlined processing pipeline with intelligent caching and intermediate file compression reduced storage requirements by $\sim$85\% while maintaining all diagnostically relevant information.
 \end{itemize}
 
 The final preprocessing pipeline represented an optimized compromise, prioritizing the preservation of diagnostically relevant features while maintaining reasonable computational efficiency.
@@ -1243,7 +1162,7 @@ The final preprocessing pipeline represented an optimized compromise, prioritizi
 Perhaps the most methodologically significant challenge was preventing data leakage—a subtle but crucial issue in longitudinal medical imaging studies:
 
 \begin{itemize}
-    \item \textbf{Subject-level isolation:} Initial experiments with scan-level partitioning produced artificially inflated performance metrics (approximately 90\% accuracy). Implementing strict subject-level isolation revealed more realistic performance (77\%), highlighting a methodological issue that potentially affects many published studies.
+    \item \textbf{Subject-level isolation:} Initial experiments with scan-level partitioning produced artificially inflated performance metrics ($\sim$90\% accuracy). Implementing strict subject-level isolation revealed more realistic performance ($\sim$77\%), highlighting a methodological issue that potentially affects many published studies.
     
     \item \textbf{Subject tracking system:} A comprehensive subject tracking system was implemented to ensure complete isolation between dataset partitions, requiring unique identifiers for subjects and scans.
     
@@ -1263,7 +1182,7 @@ Despite the promising results and methodological contributions of this study, se
 The exclusive use of the ADNI dataset, while providing standardized high-quality data, introduces potential biases that may affect generalizability:
 
 \begin{itemize}
-    \item \textbf{Demographic representativeness}: The ADNI cohort skews toward higher education levels and predominantly Caucasian participants (>90\%), potentially limiting generalizability across diverse populations where AD presentation and progression may differ~\cite{lamontagne2019oasis, jack2008alzheimer}.
+    \item \textbf{Demographic representativeness}: The ADNI cohort skews toward higher education levels and predominantly Caucasian participants (>90\%), potentially limiting generalizability across diverse populations where AD presentation and progression may differ~\cite{jack2008alzheimer}.
     
     \item \textbf{Selection bias}: ADNI's stringent inclusion and exclusion criteria potentially exclude patients with significant comorbidities, vascular pathology, or mixed dementia—conditions frequently encountered in clinical practice~\cite{jack2008alzheimer}.
     
