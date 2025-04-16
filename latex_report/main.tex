@@ -639,7 +639,7 @@ F1-Score & 81.05\% & 79.74\% & 70.59\% & 77.13 ± 5.70\% \\
 \label{tab:cross_validation}
 \end{table}
 
-The low standard deviation (2.34\%) across folds indicates robust performance independent of specific subject allocation, supporting the generalizability of our approach to unseen individuals.
+The low standard deviation (2.34\%) across folds indicates robust performance independent of specific subject allocation, supporting the generalizability of this approach to unseen individuals.
 
 \subsubsection{Learning Curve Analysis}
 
@@ -740,7 +740,7 @@ This improvement can be attributed to the preservation of $\sim$35\% more effect
 
 \subsubsection{Skull Stripping Quality}
 
-SynthStrip was selected as the skull stripping method for all preprocessing due to its known advantages in handling atrophied brains. While a direct comparison between skull stripping methods was not performed, qualitative assessment of the SynthStrip results showed excellent preservation of cortical boundaries and consistent handling of atrophied brain regions characteristic of Alzheimer's disease. Figure \ref{fig:skull_stripping_comparison} shows example outputs from SynthStrip, demonstrating its effectiveness across different subjects in our dataset.
+SynthStrip was selected as the skull stripping method for all preprocessing due to its known advantages in handling atrophied brains. While a direct comparison between skull stripping methods was not performed, qualitative assessment of the SynthStrip results showed excellent preservation of cortical boundaries and consistent handling of atrophied brain regions characteristic of Alzheimer's disease. Figure \ref{fig:skull_stripping_comparison} shows example outputs from SynthStrip, demonstrating its effectiveness across different subjects in the dataset.
 
 The literature suggests that high-quality skull stripping is important for AD classification tasks, with previous studies reporting performance differences of 2-4\% between optimal and suboptimal brain extraction methods \cite{hoopes2022synthstrip}. By employing SynthStrip consistently across all scans, non-brain tissue did not introduce confounding signals that might otherwise impact the model's ability to identify disease-specific patterns.
 
@@ -792,7 +792,7 @@ This 20-percentage-point difference highlights the critical importance of proper
 \section{Discussion}
 \label{sec:discussion}
 
-This section critically examines the implications of our findings on transfer learning for Alzheimer's disease detection, contextualizing the results within existing literature while considering technical insights, clinical relevance, and methodological contributions.
+This section critically examines the implications of these findings on transfer learning for Alzheimer's disease detection, contextualizing the results within existing literature while considering technical insights, clinical relevance, and methodological contributions.
 
 \subsection{Interpretation of Results}
 
@@ -810,13 +810,13 @@ Several factors contribute to this performance ceiling. Disease heterogeneity is
 
 \subsubsection{Comparison with Human Performance and Literature}
 
-Contextualizing our model against human performance provides important perspective. Klöppel et al.~\cite{kloppel2008accuracy} found experienced neuroradiologists achieved $\sim$80\% accuracy in distinguishing AD from age-matched controls using structural MRI—comparable to our model's performance. However, radiologist performance drops considerably (to 63-70\%) when evaluating early-stage or atypical cases, highlighting a potential niche where algorithmic approaches might complement human expertise.
+Contextualizing the model against human performance provides important perspective. Klöppel et al.~\cite{kloppel2008accuracy} found experienced neuroradiologists achieved $\sim$80\% accuracy in distinguishing AD from age-matched controls using structural MRI—comparable to the model's performance. However, radiologist performance drops considerably (to 63-70\%) when evaluating early-stage or atypical cases, highlighting a potential niche where algorithmic approaches might complement human expertise.
 
-While our model's overall accuracy (77.26\%) is slightly below expert radiologist levels, its sensitivity (79.29\%) exceeds the reported average radiologist sensitivity of 70-75\%~\cite{frisoni2010clinical}, suggesting particular utility in reducing missed cases. The model's consistent performance contrasts with significant inter-reader variability in radiological assessment~\cite{kloppel2008accuracy}, suggesting potential for standardizing evaluations.
+While the model's overall accuracy (77.26\%) is slightly below expert radiologist levels, its sensitivity (79.29\%) exceeds the reported average radiologist sensitivity of 70-75\%~\cite{frisoni2010clinical}, suggesting particular utility in reducing missed cases. The model's consistent performance contrasts with significant inter-reader variability in radiological assessment~\cite{kloppel2008accuracy}, suggesting potential for standardizing evaluations.
 
-Our performance appears lower than some published results, particularly those reporting >90\% accuracy. Key contributing factors include: our stringent subject-level isolation methodology; dataset composition including challenging cases; and hardware constraints limiting resolution and model complexity. The 20-percentage-point difference observed between scan-level partitioning (97.67\% accuracy) and proper subject-level isolation (77.26\% accuracy) aligns with Davatzikos et al.'s~\cite{davatzikos2019machine} warning that data leakage can inflate performance by 10-15\%, suggesting many published results may be substantially overestimated.
+Performance appears lower than some published results, particularly those reporting >90\% accuracy. Key contributing factors include: stringent subject-level isolation methodology; dataset composition including challenging cases; and hardware constraints limiting resolution and model complexity. The 20-percentage-point difference observed between scan-level partitioning (97.67\% accuracy) and proper subject-level isolation (77.26\% accuracy) aligns with Davatzikos et al.'s~\cite{davatzikos2019machine} warning that data leakage can inflate performance by 10-15\%, suggesting many published results may be substantially overestimated.
 
-Notably, our results align closely with Gunawardena et al.~\cite{gunawardena2017applying}, who employed similarly rigorous validation and reported 78.8\% accuracy, suggesting our approach yields realistic performance estimates for this challenging classification task.
+Notably, these results align closely with Gunawardena et al.~\cite{gunawardena2017applying}, who employed similarly rigorous validation and reported 78.8\% accuracy, suggesting the approach yields realistic performance estimates for this challenging classification task.
 
 \subsubsection{Analysis of Classification Errors}
 
@@ -846,7 +846,7 @@ Contrary to findings in video classification tasks—where factorized convolutio
 
 \subsubsection{Computational Challenges and Solutions}
 
-Our implementation revealed counterintuitive efficiency patterns: despite theoretical computational advantages of mixed and factorized convolutions, R3D-18 demonstrated substantially faster training times (1 hour/epoch) compared to MC3-18 (4 hours/epoch) and R(2+1)D (5 hours/epoch). This unexpected efficiency can be attributed to optimized implementations of standard 3D convolutions in modern deep learning frameworks. These findings challenge the assumption that architecturally "lighter" models necessarily translate to computational efficiency gains in practice.
+The implementation revealed counterintuitive efficiency patterns: despite theoretical computational advantages of mixed and factorized convolutions, R3D-18 demonstrated substantially faster training times (1 hour/epoch) compared to MC3-18 (4 hours/epoch) and R(2+1)D (5 hours/epoch). This unexpected efficiency can be attributed to optimized implementations of standard 3D convolutions in modern deep learning frameworks. These findings challenge the assumption that architecturally "lighter" models necessarily translate to computational efficiency gains in practice.
 
 Working with high-dimensional volumetric data (128×128×128) placed considerable demands on memory management. Batch size was restricted to 2 samples due to memory limitations, and several optimization techniques were necessary:
 
@@ -878,7 +878,7 @@ This finding represents a key methodological contribution, highlighting how impl
 
 \subsection{Clinical Implications}
 
-With a test accuracy of 77.26\%, our model shows potential as a screening or assistive mechanism rather than a standalone diagnostic tool. This performance should be contextualized against both our rigorous subject-level validation methodology and clinical diagnostic accuracy for AD (65-96\%)~\cite{kloppel2008accuracy}.
+With a test accuracy of 77.26\%, the model shows potential as a screening or assistive mechanism rather than a standalone diagnostic tool. This performance should be contextualized against both rigorous subject-level validation methodology and clinical diagnostic accuracy for AD (65-96\%)~\cite{kloppel2008accuracy}.
 
 \subsubsection{Potential Applications and Workflow Integration}
 
@@ -904,17 +904,17 @@ From an economic perspective, early diagnosis through automated screening could 
 
 The exclusive use of the ADNI dataset introduces potential biases that may affect generalizability. ADNI's demographic composition skews toward higher education levels and predominantly Caucasian participants, potentially limiting generalizability across populations where AD presentation and progression may differ~\cite{jack2008alzheimer}. The dataset's stringent inclusion criteria potentially exclude patients with significant comorbidities, vascular pathology, or mixed dementia that are common in clinical practice. Despite augmentation attempts, inter-scanner and inter-site variations remain a concern, potentially introducing confounding technical factors. Furthermore, focusing on AD versus CN excludes borderline and early-stage presentations, limiting the model's applicability across the disease spectrum.
 
-The binary classification approach (AD vs. CN) represents another significant limitation. By excluding Mild Cognitive Impairment, our approach bypasses critical early-stage detection challenges where intervention might be most beneficial. The lack of differential diagnosis capability between various dementia types (e.g., vascular dementia, Lewy body dementia) substantially limits clinical utility in real-world settings where multiple pathologies often co-exist. This binary framing also misrepresents the continuous progression from normal aging to severe dementia, artificially dichotomizing what is typically a gradual process. Additionally, mixed pathologies commonly seen in clinical practice remain unaddressed by this simplified diagnostic model.
+The binary classification approach (AD vs. CN) represents another significant limitation. By excluding Mild Cognitive Impairment, the approach bypasses critical early-stage detection challenges where intervention might be most beneficial. The lack of differential diagnosis capability between various dementia types (e.g., vascular dementia, Lewy body dementia) substantially limits clinical utility in real-world settings where multiple pathologies often co-exist. This binary framing also misrepresents the continuous progression from normal aging to severe dementia, artificially dichotomizing what is typically a gradual process. Additionally, mixed pathologies commonly seen in clinical practice remain unaddressed by this simplified diagnostic model.
 
 \subsubsection{Technical and Methodological Limitations}
 
 Resolution and modality limitations affected the model's discriminative capabilities. The 128³ resolution represents a substantial reduction from native MRI resolution, potentially obscuring fine-grained differences. Additionally, relying solely on T1-weighted structural MRI ignores complementary information available from other sequences and modalities that could enhance diagnostic accuracy.
 
-The transfer learning approach introduces fundamental limitations to our methodology. Features optimized for video action recognition are inherently different from the structural patterns relevant in AD detection, potentially limiting the effectiveness of knowledge transfer across these disparate domains. The layer freezing strategy implemented represents just one of many possible transfer learning approaches; more sophisticated adaptation methods might better bridge the domain gap and improve performance. The fundamental mismatch between video classification (where temporal dynamics are crucial) and structural MRI analysis (where static volumetric patterns are key) may ultimately limit knowledge transfer effectiveness, potentially explaining the performance ceiling observed in our experiments.
+The transfer learning approach introduces fundamental limitations to the methodology. Features optimized for video action recognition are inherently different from the structural patterns relevant in AD detection, potentially limiting the effectiveness of knowledge transfer across these disparate domains. The layer freezing strategy implemented represents just one of many possible transfer learning approaches; more sophisticated adaptation methods might better bridge the domain gap and improve performance. The fundamental mismatch between video classification (where temporal dynamics are crucial) and structural MRI analysis (where static volumetric patterns are key) may ultimately limit knowledge transfer effectiveness, potentially explaining the performance ceiling observed in the experiments.
 
 \subsubsection{Validation and Deployment Limitations}
 
-The retrospective nature of this study presents inherent limitations for clinical translation. Testing was performed exclusively on ADNI data with its standardized acquisition protocols that may not reflect the variability encountered in routine clinical settings. External validation across diverse datasets is essential for assessing real-world performance across different populations, scanners, and acquisition parameters. Our retrospective analysis does not capture prospective performance in a clinical workflow, where factors like acquisition variability and patient selection significantly impact utility. While 3-fold cross-validation provided some assessment of generalizability, more extensive validation across different acquisition sites or protocols would strengthen confidence in the robustness of our approach. The model's performance (77.26\% accuracy), while promising, falls short of the threshold typically considered necessary for independent clinical applications (>90\%), limiting its immediate translational potential to assistive rather than autonomous functions. Additionally, direct comparison with radiologist performance on the same test set was not performed, which would have provided valuable context for the model's relative clinical utility compared to human experts.
+The retrospective nature of this study presents inherent limitations for clinical translation. Testing was performed exclusively on ADNI data with its standardized acquisition protocols that may not reflect the variability encountered in routine clinical settings. External validation across diverse datasets is essential for assessing real-world performance across different populations, scanners, and acquisition parameters. The retrospective analysis does not capture prospective performance in a clinical workflow, where factors like acquisition variability and patient selection significantly impact utility. While 3-fold cross-validation provided some assessment of generalizability, more extensive validation across different acquisition sites or protocols would strengthen confidence in the robustness of the approach. The model's performance (77.26\% accuracy), while promising, falls short of the threshold typically considered necessary for independent clinical applications (>90\%), limiting its immediate translational potential to assistive rather than autonomous functions. Additionally, direct comparison with radiologist performance on the same test set was not performed, which would have provided valuable context for the model's relative clinical utility compared to human experts.
 
 % \subsubsection{Interpretability and Explainability Limitations}
 % % TODO once XAI is done redo this
