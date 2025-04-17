@@ -1003,7 +1003,6 @@ class TrainerEngine:
         return loss, acc
 
 
-# --- Grad-CAM Visualization Function ---
 def visualize_grad_cam(model, dataloader, checkpoint_manager, config, num_images=5):
     """
     Generates Grad-CAM visualizations for a few images using the best model.
@@ -1046,24 +1045,40 @@ def visualize_grad_cam(model, dataloader, checkpoint_manager, config, num_images
     except Exception as e:
         print(f"Error initializing GradCAM: {e}")
         return
-    # --- End change ---
 
     cam_output_dir = config.cam_output_dir
     os.makedirs(cam_output_dir, exist_ok=True)
 
     images_processed = 0
+    subjects_visualized = {
+        "AD_correct": 0,
+        "CN_correct": 0,
+        "AD_incorrect": 0,
+        "CN_incorrect": 0,
+    }
+    max_per_category = 3
+
     for inputs, labels, img_paths in dataloader:
         inputs = inputs.to(config.device)
         labels = labels.to(config.device)
 
         for i in range(inputs.size(0)):
-            if images_processed >= num_images:
-                break
-
-            input_tensor = inputs[i : i + 1]  # Keep batch dimension
+            input_tensor = inputs[i : i + 1].to(config.device)
             label = labels[i].item()
             img_path = img_paths[i]
             base_filename = os.path.basename(img_path).replace(".nii.gz", "")
+
+            # Get model prediction
+            with torch.no_grad():
+                output = model(input_tensor)
+                _, pred = torch.max(output.data, 1)
+                prediction = pred.item()
+
+            category = f"{'AD' if label == 1 else 'CN'}_{'correct' if label == prediction else 'incorrect'}"
+
+            # Limit the number of visualizations per category
+            if subjects_visualized[category] >= max_per_category:
+                continue
 
             # Define targets for CAM
             targets = [ClassifierOutputTarget(label)]
@@ -1073,46 +1088,43 @@ def visualize_grad_cam(model, dataloader, checkpoint_manager, config, num_images
             except Exception as e:
                 print(f"Error generating CAM for {img_path}: {e}")
                 continue
-
-            # grayscale_cam shape is [B, D, H, W]. Remove batch dim.
             if grayscale_cam is None or grayscale_cam.ndim == 0:
-                print(
-                    f"Warning: CAM generation resulted in None or scalar for {img_path}"
-                )
                 continue
-            grayscale_cam = grayscale_cam[0, :]  # Now shape [D, H, W]
+            grayscale_cam = grayscale_cam[0, :]  # Shape [D, H, W]
 
-            # --- Visualization for 3D Data ---
-            mid_slice_idx = grayscale_cam.shape[0] // 2
-            cam_slice = grayscale_cam[mid_slice_idx, :, :]  # Shape [H, W]
+            # --- Visualize Multiple Slices ---
+            # Define key slices (e.g., around hippocampus) or a range
+            slice_indices_to_visualize = [
+                grayscale_cam.shape[0] // 3,
+                grayscale_cam.shape[0] // 2,
+                2 * grayscale_cam.shape[0] // 3,
+            ]
 
-            img_slice_tensor = input_tensor[0, 0, mid_slice_idx, :, :].cpu().numpy()
+            for slice_idx in slice_indices_to_visualize:
+                cam_slice = grayscale_cam[slice_idx, :, :]
+                img_slice_tensor = input_tensor[0, 0, slice_idx, :, :].cpu().numpy()
 
-            img_slice_normalized = cv2.normalize(
-                img_slice_tensor, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
-            )
-            img_slice_bgr = cv2.cvtColor(img_slice_normalized, cv2.COLOR_GRAY2BGR)
+                img_slice_normalized = cv2.normalize(
+                    img_slice_tensor, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
+                )
+                img_slice_bgr = cv2.cvtColor(img_slice_normalized, cv2.COLOR_GRAY2BGR)
 
-            try:
                 visualization = show_cam_on_image(
                     img_slice_bgr / 255.0, cam_slice, use_rgb=False
                 )
-            except Exception as e:
-                print(f"Error during show_cam_on_image for {img_path}: {e}")
-                continue
 
-            output_filename = (
-                f"{base_filename}_label{label}_slice{mid_slice_idx}_gradcam.png"
-            )
-            output_path = os.path.join(cam_output_dir, output_filename)
-            cv2.imwrite(output_path, visualization)
+                output_filename = f"{base_filename}_true{label}_pred{prediction}_slice{slice_idx}_gradcam.png"
+                output_path = os.path.join(cam_output_dir, output_filename)
+                cv2.imwrite(output_path, visualization)
+                # Log to wandb if desired
+                # wandb.log({f"CAM_{category}_{base_filename}_slice{slice_idx}": wandb.Image(output_path)})
 
-            images_processed += 1
+            subjects_visualized[category] += 1
+            images_processed += 1  # Count subjects, not slices
 
-        if images_processed >= num_images:
-            break
-
-    print(f"Finished generating {images_processed} Grad-CAM visualizations.")
+    print(
+        f"Finished generating Grad-CAM visualizations for {subjects_visualized} subjects."
+    )
 
 
 def main(data_path):
