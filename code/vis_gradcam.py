@@ -1,20 +1,24 @@
 import os
 import glob
-from PIL import Image, ImageDraw, ImageFont, ImageOps
-import math
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import numpy as np
+from math import ceil
 
 
-def collate_gradcam_visualizations(
+def collate_gradcam_visualizations_matplotlib(
     input_dir,
-    output_path="gradcam_collage.png",
+    output_path="gradcam_collage_matplotlib.png",
     categories=["AD_correct", "CN_correct", "AD_incorrect", "CN_incorrect"],
     slices=[55, 65, 75],
     subjects_per_category=3,
-    spacing=10,
-    label_font_size=20,
+    label_font_size=10,
+    title_font_size=12,
+    dpi=150,
 ):
     """
-    Collates individual Grad-CAM slice images into a single grid visualization.
+    Collates individual Grad-CAM slice images into a single grid visualization
+    using Matplotlib.
 
     Args:
         input_dir (str): Path to the directory containing the Grad-CAM PNG images.
@@ -22,26 +26,26 @@ def collate_gradcam_visualizations(
         categories (list): List of category strings (e.g., 'AD_correct').
         slices (list): List of slice indices used in the filenames.
         subjects_per_category (int): The number of subjects visualized per category.
-        spacing (int): Pixels between images and labels in the collage.
-        label_font_size (int): Font size for category and slice labels.
+        label_font_size (int): Font size for category labels.
+        title_font_size (int): Font size for main title and column titles.
+        dpi (int): Resolution for the saved figure.
     """
-    print(f"Starting collage creation from images in: {input_dir}")
+    print(f"Starting Matplotlib collage creation from images in: {input_dir}")
     print(f"Categories: {categories}")
     print(f"Slices: {slices}")
     print(f"Expected subjects per category: {subjects_per_category}")
 
     image_files = {}
     all_subject_ids = set()
+    found_subjects_count = {}
 
-    # Find image files and group by category and subject
+    # --- Find image files and group by category and subject ---
     for cat in categories:
-        # Extract label and prediction from category name
         parts = cat.split("_")
         true_label = 1 if parts[0] == "AD" else 0
         correct = parts[1] == "correct"
         pred_label = true_label if correct else 1 - true_label
 
-        # Find subjects matching this category
         pattern = os.path.join(
             input_dir, f"*_true{true_label}_pred{pred_label}_slice*_gradcam.png"
         )
@@ -51,13 +55,12 @@ def collate_gradcam_visualizations(
         for f in matching_files:
             basename = os.path.basename(f)
             try:
-                # Extract subject ID (assuming format like 'ID_true..._gradcam.png')
-                subject_id = "_".join(
-                    basename.split("_")[:-4]
-                )  # Adjust if ID format differs
+                subject_id = "_".join(basename.split("_")[:-4])
+                if not subject_id:  # Handle cases where split might be unexpected
+                    print(f"Warning: Could not extract subject ID from {basename}")
+                    continue
                 if subject_id not in subjects_in_cat:
                     subjects_in_cat[subject_id] = {}
-                # Extract slice number
                 slice_num = int(basename.split("_")[-2].replace("slice", ""))
                 if slice_num in slices:
                     subjects_in_cat[subject_id][slice_num] = f
@@ -66,17 +69,34 @@ def collate_gradcam_visualizations(
                 continue
 
         # Select the required number of subjects (sort for consistency)
-        selected_subjects = sorted(list(subjects_in_cat.keys()))[:subjects_per_category]
-        image_files[cat] = {subj: subjects_in_cat[subj] for subj in selected_subjects}
+        # Ensure subjects have all required slices if possible, otherwise just take first N
+        valid_subjects = {
+            subj: data
+            for subj, data in subjects_in_cat.items()
+            if len(data) == len(slices)  # Prioritize subjects with all slices
+        }
+        sorted_valid_subjects = sorted(list(valid_subjects.keys()))
+
+        # If not enough subjects with all slices, add others
+        other_subjects = sorted(
+            [subj for subj in subjects_in_cat if subj not in valid_subjects]
+        )
+        combined_sorted_subjects = sorted_valid_subjects + other_subjects
+
+        selected_subjects = combined_sorted_subjects[:subjects_per_category]
+
+        image_files[cat] = {
+            subj: subjects_in_cat[subj]
+            for subj in selected_subjects
+            if subj in subjects_in_cat
+        }
         all_subject_ids.update(selected_subjects)
+        found_subjects_count[cat] = len(selected_subjects)
 
         if len(selected_subjects) < subjects_per_category:
             print(
                 f"Warning: Found only {len(selected_subjects)} subjects for category {cat}, expected {subjects_per_category}"
             )
-        elif len(selected_subjects) > subjects_per_category:
-            # This case might happen if sorting changes which ones are picked by [:subjects_per_category]
-            pass  # No need to print info if we just take the first N sorted ones
 
     if not any(image_files.values()):
         print(
@@ -84,225 +104,210 @@ def collate_gradcam_visualizations(
         )
         return
 
-    # --- Determine Layout ---
-    num_rows_per_cat = subjects_per_category
-    num_cols = len(slices)
+    # --- Determine Layout & Create Figure ---
+    num_rows = len(categories)
+    num_cols = subjects_per_category * len(slices)
 
-    # Load one image to get dimensions BEFORE rotation
-    first_cat_key = next(iter(image_files.keys()), None)
-    if not first_cat_key or not image_files[first_cat_key]:
-        print(
-            "Error: No subjects found for the first category to determine image size."
-        )
-        return
-    first_subj_key = next(iter(image_files[first_cat_key].keys()), None)
-    if not first_subj_key or not image_files[first_cat_key][first_subj_key]:
-        print(
-            f"Error: No slices found for the first subject ({first_subj_key}) in category {first_cat_key}."
-        )
-        return
-    first_slice_key = next(
-        iter(image_files[first_cat_key][first_subj_key].keys()), None
-    )
-    if not first_slice_key:
-        print(f"Error: Could not get first slice key for subject {first_subj_key}.")
-        return
-
+    # Estimate figure size based on a sample image aspect ratio and desired DPI
+    # Load one image to get dimensions
+    img_w, img_h = 100, 100  # Default/fallback size
     try:
-        template_path = image_files[first_cat_key][first_subj_key][first_slice_key]
+        first_cat = next(iter(image_files.keys()))
+        first_subj = next(iter(image_files[first_cat].keys()))
+        first_slice = next(iter(image_files[first_cat][first_subj].keys()))
+        template_path = image_files[first_cat][first_subj][first_slice]
         with Image.open(template_path) as img_template:
-            orig_w, orig_h = img_template.size
-        # Define layout dimensions based on ROTATED size
-        img_w, img_h = orig_h, orig_w  # Swapped dimensions
-        print(
-            f"Detected original image size: {orig_w}x{orig_h}. Using rotated size for layout: {img_w}x{img_h}"
-        )
+            # Use original orientation dimensions for aspect ratio calculation
+            img_w, img_h = img_template.size
     except Exception as e:
-        print(f"Error loading template image '{template_path}': {e}")
-        return
+        print(
+            f"Warning: Could not load template image to determine size, using default. Error: {e}"
+        )
 
-    # Calculate total dimensions using ROTATED image dimensions
-    total_width = (num_cols * img_w) + ((num_cols + 1) * spacing)
-    total_height = (
-        (len(categories) * num_rows_per_cat * img_h)  # Height of all image rows
-        + (
-            (len(categories) * num_rows_per_cat) * spacing
-        )  # Spacing below each image row
-        + (
-            len(categories) * (spacing + label_font_size)
-        )  # Space for category labels + spacing above them
-        + (
-            spacing + label_font_size
-        )  # Extra space for top slice labels + spacing above them
-        + spacing  # Final spacing at the bottom
+    # Calculate figure size (inches) - adjust multiplier as needed for spacing
+    fig_width = num_cols * (img_w / dpi) * 1.5
+    fig_height = num_rows * (img_h / dpi) * 1.5
+    # Add extra height for titles/labels
+    fig_height += 1.0  # Add an inch for top titles/spacing
+    fig_width += 1.0  # Add an inch for side labels/spacing
+
+    fig, axes = plt.subplots(
+        num_rows, num_cols, figsize=(fig_width, fig_height), squeeze=False, dpi=dpi
     )
 
-    # Create canvas
-    collage = Image.new("RGB", (total_width, total_height), color="white")
-    draw = ImageDraw.Draw(collage)
-    try:
-        # Use a basic default font if specific one not found
-        font = ImageFont.truetype("arial.ttf", label_font_size)
-    except IOError:
-        print("Arial font not found, using default PIL font.")
-        font = ImageFont.load_default(size=label_font_size)  # Try specifying size
-
-    # --- Paste Images and Add Labels ---
-    current_y = spacing + label_font_size + spacing  # Start below top slice labels
-
-    # Add Slice Labels at the top (centered above rotated image width)
-    for j, slice_num in enumerate(slices):
-        label_text = f"Slice {slice_num}"
-        # Use textbbox for potentially more accurate size in newer Pillow versions
-        try:
-            bbox = draw.textbbox((0, 0), label_text, font=font)
-            text_w = bbox[2] - bbox[0]
-            text_h = bbox[3] - bbox[1]
-        except AttributeError:  # Fallback for older Pillow
-            text_w, text_h = draw.textsize(label_text, font=font)
-
-        # Center label within the column width (img_w is rotated width)
-        label_x = spacing + (j * (img_w + spacing)) + (img_w // 2) - (text_w // 2)
-        label_y = spacing
-        draw.text((label_x, label_y), label_text, fill="black", font=font)
-
+    # --- Populate Grid ---
     for i, cat in enumerate(categories):
-        # Add Category Label
-        cat_label_text = cat.replace("_", " ").title()
-        try:
-            bbox = draw.textbbox((0, 0), cat_label_text, font=font)
-            text_w = bbox[2] - bbox[0]
-            text_h = bbox[3] - bbox[1]
-        except AttributeError:
-            text_w, text_h = draw.textsize(cat_label_text, font=font)
+        subjects = list(
+            image_files.get(cat, {}).keys()
+        )  # Already sorted during selection
+        num_found_subjects = found_subjects_count[cat]
 
-        cat_label_x = spacing
-        cat_label_y = current_y
-        draw.text((cat_label_x, cat_label_y), cat_label_text, fill="black", font=font)
-        current_y += label_font_size + spacing  # Move down past label and its spacing
-
-        subjects = list(image_files.get(cat, {}).keys())
-        for row_idx in range(subjects_per_category):
-            current_x = spacing  # Reset X for each new row (subject)
-            if row_idx < len(subjects):
-                subj_id = subjects[row_idx]
+        for subj_idx in range(subjects_per_category):
+            if subj_idx < num_found_subjects:
+                subj_id = subjects[subj_idx]
                 subj_files = image_files[cat][subj_id]
 
-                for col_idx, slice_num in enumerate(slices):
+                for slice_idx, slice_num in enumerate(slices):
+                    col_idx = subj_idx * len(slices) + slice_idx
+                    ax = axes[i, col_idx]
                     img_path = subj_files.get(slice_num)
+
                     if img_path and os.path.exists(img_path):
                         try:
-                            img = Image.open(img_path)
-                            # --- ROTATE THE IMAGE ---
-                            rotated_img = img.transpose(
-                                Image.Transpose.ROTATE_270
-                            )  # 90 degrees counter-clockwise
-                            img.close()  # Close original image
-
-                            # Check size against ROTATED dimensions (img_w, img_h)
-                            if rotated_img.size != (img_w, img_h):
-                                print(
-                                    f"Warning: Resizing rotated image {os.path.basename(img_path)} from {rotated_img.size} to {(img_w, img_h)}"
-                                )
-                                rotated_img = rotated_img.resize(
-                                    (img_w, img_h), Image.Resampling.LANCZOS
-                                )
-
-                            # Paste the ROTATED image
-                            collage.paste(rotated_img, (current_x, current_y))
-                            rotated_img.close()  # Close rotated image after pasting
-
+                            img_data = mpimg.imread(img_path)
+                            ax.imshow(img_data)
                         except Exception as e:
-                            print(f"Error processing/pasting image {img_path}: {e}")
-                            # Draw a placeholder using ROTATED dimensions
-                            draw.rectangle(
-                                [
-                                    current_x,
-                                    current_y,
-                                    current_x + img_w,  # Use rotated width
-                                    current_y + img_h,  # Use rotated height
-                                ],
-                                outline="red",
-                                width=2,
-                            )
-                            draw.text(
-                                (current_x + 5, current_y + 5),
+                            print(f"Error loading image {img_path}: {e}")
+                            ax.text(
+                                0.5,
+                                0.5,
                                 "Error",
-                                fill="red",
-                                font=font,
+                                ha="center",
+                                va="center",
+                                fontsize=label_font_size,
+                                color="red",
+                                transform=ax.transAxes,
                             )
                     else:
-                        # Draw placeholder if image missing using ROTATED dimensions
-                        print(
-                            f"Warning: Image not found for {cat}, Subject {row_idx+1} ({subj_id}), Slice {slice_num}"
-                        )
-                        draw.rectangle(
-                            [
-                                current_x,
-                                current_y,
-                                current_x + img_w,  # Use rotated width
-                                current_y + img_h,  # Use rotated height
-                            ],
-                            outline="gray",
-                            width=1,
-                        )
-                        draw.text(
-                            (current_x + 5, current_y + 5),
+                        # Handle missing image
+                        ax.text(
+                            0.5,
+                            0.5,
                             "Missing",
-                            fill="gray",
-                            font=font,
+                            ha="center",
+                            va="center",
+                            fontsize=label_font_size,
+                            color="gray",
+                            transform=ax.transAxes,
+                        )
+                        print(
+                            f"Info: Image not found for {cat}, Subject {subj_idx+1} ({subj_id}), Slice {slice_num}"
                         )
 
-                    current_x += (
-                        img_w + spacing
-                    )  # Move right by rotated width + spacing
+                    ax.axis("off")  # Turn off axis lines and ticks
+
+                    # --- Add Column Titles (Slice Number) ---
+                    if i == 0:  # Only add to the top row
+                        ax.set_title(
+                            f"Slice {slice_num}", fontsize=label_font_size, pad=5
+                        )
+
+                    # --- Add Column Titles (Subject Number) ---
+                    # Place above the first slice of each subject group in the top row
+                    if i == 0 and slice_idx == 0:
+                        # Use annotate for positioning above the slice title
+                        axes[0, col_idx].annotate(
+                            f"Subject {subj_idx+1}",
+                            xy=(0.5, 1),
+                            xytext=(0, 15),  # Adjust y offset
+                            xycoords="axes fraction",
+                            textcoords="offset points",
+                            fontsize=title_font_size,
+                            weight="bold",
+                            ha="center",
+                            va="baseline",
+                        )
             else:
-                # Draw placeholders if fewer subjects than expected using ROTATED dimensions
-                for col_idx, slice_num in enumerate(slices):
-                    draw.rectangle(
-                        [
-                            current_x,
-                            current_y,
-                            current_x + img_w,
-                            current_y + img_h,
-                        ],  # Use rotated dimensions
-                        outline="lightgray",
-                        width=1,
+                # --- Handle missing subjects (draw empty axes) ---
+                for slice_idx in range(len(slices)):
+                    col_idx = subj_idx * len(slices) + slice_idx
+                    ax = axes[i, col_idx]
+                    ax.text(
+                        0.5,
+                        0.5,
+                        "N/A",
+                        ha="center",
+                        va="center",
+                        fontsize=label_font_size,
+                        color="lightgray",
+                        transform=ax.transAxes,
                     )
-                    draw.text(
-                        (current_x + 5, current_y + 5),
-                        f"N/A",
-                        fill="lightgray",
-                        font=font,
-                    )
-                    current_x += (
-                        img_w + spacing
-                    )  # Move right by rotated width + spacing
+                    ax.axis("off")
 
-            current_y += (
-                img_h + spacing
-            )  # Move down by rotated height + spacing for next subject/row
-        # No extra spacing needed here, spacing after last image row is handled by loop increment and total height calc
+        # --- Add Row Labels (Category) ---
+        # Use annotate on the first axes of the row for better control
+        label_text = cat.replace("_", " ").title()
+        axes[i, 0].annotate(
+            label_text,
+            xy=(0, 0.5),
+            xytext=(-10, 0),  # Adjust x offset for padding
+            xycoords="axes fraction",
+            textcoords="offset points",  # Position relative to axes
+            fontsize=title_font_size,
+            weight="bold",
+            ha="right",
+            va="center",
+            rotation=90,
+        )  # Vertical labels
 
-    # Save the final collage
+    # --- Final Adjustments & Save ---
+    fig.suptitle(
+        "Grad-CAM Visualization Summary",
+        fontsize=title_font_size + 2,
+        weight="bold",
+        y=0.98,
+    )  # Adjust y position
+
+    # Adjust layout to prevent labels/titles overlapping
+    # Increase top margin for subject titles, left margin for category labels
+    plt.subplots_adjust(
+        left=0.1, right=0.98, top=0.88, bottom=0.02, wspace=0.1, hspace=0.2
+    )
+
     try:
-        collage.save(output_path)
-        print(f"Collage saved successfully to: {output_path}")
+        plt.savefig(output_path, dpi=dpi, bbox_inches="tight")
+        print(f"Matplotlib collage saved successfully to: {output_path}")
     except Exception as e:
-        print(f"Error saving collage image: {e}")
+        print(f"Error saving Matplotlib collage image: {e}")
+
+    plt.close(fig)  # Close the figure to free memory
 
 
 # --- Example Usage ---
 if __name__ == "__main__":
+    # Import Image from PIL just for getting dimensions safely in main block
+    from PIL import Image
+
     # --- Run the collation function ---
     input_image_directory = "./cam_visualizations"
-    output_collage_file = "gradcam_summary_visualization_rotated.png"  # Updated name
+    output_collage_file = "gradcam_summary_visualization_matplotlib.png"
 
-    collate_gradcam_visualizations(
+    # Create dummy input directory and files for testing if they don't exist
+    if not os.path.exists(input_image_directory):
+        print(f"Creating dummy input directory: {input_image_directory}")
+        os.makedirs(input_image_directory)
+        # Create some dummy placeholder images (e.g., solid color)
+        dummy_img = Image.new("RGB", (100, 120), color="skyblue")
+        dummy_slices = [55, 65, 75]
+        dummy_subjects = {
+            "AD_correct": ["SubjA", "SubjB", "SubjC"],  # true=1, pred=1
+            "CN_correct": ["SubjD", "SubjE", "SubjF"],  # true=0, pred=0
+            "AD_incorrect": ["SubjG", "SubjH", "SubjI"],  # true=1, pred=0
+            "CN_incorrect": ["SubjK", "SubjL", "SubjM"],  # true=0, pred=1
+        }
+        label_map = {"AD": 1, "CN": 0}
+        pred_map = {"correct": True, "incorrect": False}
+
+        for cat, subjects in dummy_subjects.items():
+            parts = cat.split("_")
+            true_label = label_map[parts[0]]
+            correct = pred_map[parts[1]]
+            pred_label = true_label if correct else 1 - true_label
+            for subj in subjects:
+                for slc in dummy_slices:
+                    fname = f"{subj}_true{true_label}_pred{pred_label}_slice{slc}_gradcam.png"
+                    fpath = os.path.join(input_image_directory, fname)
+                    if not os.path.exists(fpath):
+                        dummy_img.save(fpath)
+        dummy_img.close()
+        print("Dummy files created.")
+
+    collate_gradcam_visualizations_matplotlib(
         input_dir=input_image_directory,
         output_path=output_collage_file,
         # Optional: Adjust parameters if needed
-        # categories=['AD_correct', 'CN_correct'], # Example: only show correct ones
-        # slices=[64], # Example: only show middle slice
-        # subjects_per_category=2,
+        categories=["AD_correct", "CN_correct", "AD_incorrect", "CN_incorrect"],
+        slices=[55, 65, 75],
+        subjects_per_category=3,
+        dpi=150,
     )
