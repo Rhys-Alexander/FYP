@@ -115,7 +115,9 @@ Word count: X,XXX   \hfill{} Dr Rickson Mesquita
 \newpage{}
 
 \section{Abstract}
-% 250 words
+
+Alzheimer's disease (AD) presents a growing global health burden, with structural MRI playing a key role in diagnosis. Manual MRI interpretation faces limitations, driving interest in automated deep learning methods. However, training deep 3D models for volumetric MRI is challenged by data scarcity. This dissertation investigates the efficacy of transfer learning by adapting video classification models (pre-trained on Kinetics-400) for AD detection using 3D structural MRI scans. Utilizing the ADNI dataset, we systematically compared 3D convolutional architectures (R3D, MC3, R(2+1)D), developed an optimized preprocessing pipeline featuring adaptive cropping, and employed rigorous subject-level cross-validation to prevent data leakage. The fine-tuned R3D-18 model achieved a test accuracy of 77.26\% and an AUC-ROC of 0.86 for binary AD versus Cognitively Normal classification. Key findings demonstrate the superiority of fully 3D architectures (R3D) for capturing relevant spatial patterns and reveal the critical impact of validation methodology; strict subject-level partitioning yielded realistic performance, contrasting sharply with inflated results (>90\%) obtained under scan-level partitioning susceptible to data leakage. This research validates video-to-volumetric transfer learning as a viable approach for AD detection, offering potential as an assistive tool, and critically highlights the necessity of methodological rigor for developing reliable neuroimaging AI.
+
 
 \section{Introduction}
 
