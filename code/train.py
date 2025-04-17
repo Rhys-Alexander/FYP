@@ -1094,11 +1094,12 @@ def visualize_grad_cam(model, dataloader, checkpoint_manager, config, num_images
 
             # --- Visualize Multiple Slices ---
             # Define key slices (e.g., around hippocampus) or a range
-            slice_indices_to_visualize = [
-                grayscale_cam.shape[0] // 3,
-                grayscale_cam.shape[0] // 2,
-                2 * grayscale_cam.shape[0] // 3,
-            ]
+            # slice_indices_to_visualize = [
+            #     grayscale_cam.shape[0] // 3,
+            #     grayscale_cam.shape[0] // 2,
+            #     2 * grayscale_cam.shape[0] // 3,
+            # ]
+            slice_indices_to_visualize = [55, 65, 75]
 
             for slice_idx in slice_indices_to_visualize:
                 cam_slice = grayscale_cam[slice_idx, :, :]
@@ -1185,28 +1186,28 @@ def main(data_path):
     trainer.best_val_acc = best_val_acc
     trainer.best_val_loss = best_val_loss
 
-    # --- Training ---
-    print("\nStarting Training...")
-    epochs_trained, final_best_val_acc, final_best_val_loss = trainer.train(
-        train_loader,
-        val_loader,
-        config.epochs,
-        start_epoch,
-        config.patience,
-    )
+    # # --- Training ---
+    # print("\nStarting Training...")
+    # epochs_trained, final_best_val_acc, final_best_val_loss = trainer.train(
+    #     train_loader,
+    #     val_loader,
+    #     config.epochs,
+    #     start_epoch,
+    #     config.patience,
+    # )
 
-    # --- Testing ---
-    print("\nStarting Testing using best accuracy model...")
-    trainer.evaluate(
-        test_loader,
-        epoch=None,  # No specific epoch needed for final test
-        prefix="test",
-        checkpoint_path="best_model_acc.pth",  # Evaluate the best model based on validation accuracy
-    )
+    # # --- Testing ---
+    # print("\nStarting Testing using best accuracy model...")
+    # trainer.evaluate(
+    #     test_loader,
+    #     epoch=None,  # No specific epoch needed for final test
+    #     prefix="test",
+    #     checkpoint_path="best_model_acc.pth",  # Evaluate the best model based on validation accuracy
+    # )
 
-    wandb.run.summary["best_val_acc"] = final_best_val_acc
-    wandb.run.summary["best_val_loss"] = final_best_val_loss
-    wandb.run.summary["total_epochs"] = epochs_trained
+    # wandb.run.summary["best_val_acc"] = final_best_val_acc
+    # wandb.run.summary["best_val_loss"] = final_best_val_loss
+    # wandb.run.summary["total_epochs"] = epochs_trained
 
     # --- Grad-CAM Visualization ---
     visualize_grad_cam(model, test_loader, checkpoint_manager, config, num_images=10)
