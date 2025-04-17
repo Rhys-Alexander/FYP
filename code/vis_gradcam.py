@@ -155,6 +155,7 @@ def collate_gradcam_visualizations_matplotlib(
                     if img_path and os.path.exists(img_path):
                         try:
                             img_data = mpimg.imread(img_path)
+                            img_data = np.rot90(img_data, k=1)
                             ax.imshow(img_data)
                         except Exception as e:
                             print(f"Error loading image {img_path}: {e}")
