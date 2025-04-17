@@ -53,7 +53,7 @@ class Config:
         # Default config
         self.architecture = "r3d_18"
         self.dataset = "MRI-AD-CN"
-        self.epochs = 2  # todo change back
+        self.epochs = 20
         self.batch_size = 2
         self.learning_rate = 0.0001
         self.optimizer = "AdamW"
@@ -467,27 +467,6 @@ class MRIModel(nn.Module):
                 padding=(0, 3, 3),
                 bias=False,
             )
-        # if architecture in ["r3d_18", "mc3_18"]:
-        #     original_first_layer = self.resnet.stem[0]
-        #     self.resnet.stem[0] = nn.Conv3d(
-        #         1,  # Input channels = 1
-        #         original_first_layer.out_channels,  # Keep original output channels
-        #         kernel_size=original_first_layer.kernel_size,
-        #         stride=original_first_layer.stride,
-        #         padding=original_first_layer.padding,
-        #         bias=False,
-        #     )
-        # elif architecture == "r2plus1d_18":
-        #     # R2Plus1D uses a slightly different stem structure
-        #     original_first_conv = self.resnet.stem[0]
-        #     self.resnet.stem[0] = nn.Conv3d(
-        #         1,  # Input channels = 1
-        #         original_first_conv.out_channels,  # Keep original output channels (mid-channels)
-        #         kernel_size=original_first_conv.kernel_size,
-        #         stride=original_first_conv.stride,
-        #         padding=original_first_conv.padding,
-        #         bias=False,
-        #     )
 
         # Replace the final fully connected layer for binary classification
         in_features = self.resnet.fc.in_features
@@ -501,19 +480,6 @@ class MRIModel(nn.Module):
         for name, param in self.resnet.named_parameters():
             if "layer4" not in name and "fc" not in name:
                 param.requires_grad = False
-        # # Freeze everything initially
-        # for param in self.resnet.parameters():
-        #     param.requires_grad = False
-
-        # # Unfreeze layer4 and fc
-        # for param in self.resnet.layer4.parameters():
-        #     param.requires_grad = True
-        # for param in self.resnet.fc.parameters():
-        #     param.requires_grad = True
-
-        # # Also unfreeze the modified first convolutional layer
-        # for param in self.resnet.stem[0].parameters():
-        #     param.requires_grad = True
 
     def count_trainable_params(self):
         """Count and return trainable parameters"""
@@ -1036,7 +1002,6 @@ def visualize_grad_cam(model, dataloader, checkpoint_manager, config, num_images
 
     model.eval()
 
-    # Define the target layer (last convolutional block of the ResNet backbone)
     target_layers = [model.resnet.layer4[-1]]
 
     print("Initializing GradCAM...")
@@ -1186,28 +1151,28 @@ def main(data_path):
     trainer.best_val_acc = best_val_acc
     trainer.best_val_loss = best_val_loss
 
-    # # --- Training ---
-    # print("\nStarting Training...")
-    # epochs_trained, final_best_val_acc, final_best_val_loss = trainer.train(
-    #     train_loader,
-    #     val_loader,
-    #     config.epochs,
-    #     start_epoch,
-    #     config.patience,
-    # )
+    # --- Training ---
+    print("\nStarting Training...")
+    epochs_trained, final_best_val_acc, final_best_val_loss = trainer.train(
+        train_loader,
+        val_loader,
+        config.epochs,
+        start_epoch,
+        config.patience,
+    )
 
-    # # --- Testing ---
-    # print("\nStarting Testing using best accuracy model...")
-    # trainer.evaluate(
-    #     test_loader,
-    #     epoch=None,  # No specific epoch needed for final test
-    #     prefix="test",
-    #     checkpoint_path="best_model_acc.pth",  # Evaluate the best model based on validation accuracy
-    # )
+    # --- Testing ---
+    print("\nStarting Testing using best accuracy model...")
+    trainer.evaluate(
+        test_loader,
+        epoch=None,  # No specific epoch needed for final test
+        prefix="test",
+        checkpoint_path="best_model_acc.pth",  # Evaluate the best model based on validation accuracy
+    )
 
-    # wandb.run.summary["best_val_acc"] = final_best_val_acc
-    # wandb.run.summary["best_val_loss"] = final_best_val_loss
-    # wandb.run.summary["total_epochs"] = epochs_trained
+    wandb.run.summary["best_val_acc"] = final_best_val_acc
+    wandb.run.summary["best_val_loss"] = final_best_val_loss
+    wandb.run.summary["total_epochs"] = epochs_trained
 
     # --- Grad-CAM Visualization ---
     visualize_grad_cam(model, test_loader, checkpoint_manager, config, num_images=10)
