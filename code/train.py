@@ -3,6 +3,7 @@ import random
 
 import wandb
 import torch
+import cv2
 
 import numpy as np
 import nibabel as nib
@@ -13,6 +14,10 @@ import torchvision.models.video as models
 
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
+
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+from pytorch_grad_cam.utils.image import show_cam_on_image
 
 from sklearn.metrics import (
     precision_recall_fscore_support,
@@ -48,7 +53,7 @@ class Config:
         # Default config
         self.architecture = "r3d_18"
         self.dataset = "MRI-AD-CN"
-        self.epochs = 20
+        self.epochs = 2  # todo change back
         self.batch_size = 2
         self.learning_rate = 0.0001
         self.optimizer = "AdamW"
@@ -59,6 +64,7 @@ class Config:
         self.patience = 5
         self.target_size = (128, 128, 128)
         self.checkpoint_dir = "checkpoints"
+        self.cam_output_dir = "cam_visualizations"
 
         # Override defaults with provided arguments
         for key, value in kwargs.items():
@@ -119,6 +125,8 @@ class MetricsManager:
         if cm.shape == (2, 2):
             tn, fp, _, _ = cm.ravel()
             metrics["specificity"] = tn / (tn + fp + 1e-10)
+        else:
+            metrics["specificity"] = 0.0
 
         try:
             metrics["roc_auc"] = roc_auc_score(labels, probs)
@@ -288,7 +296,8 @@ class MRIDataset(Dataset):
             # Ensure the label is also a tensor
             label = torch.tensor(label, dtype=torch.long)
 
-            return img_data, label
+            # Return the original image path along with data and label for visualization later
+            return img_data, label, img_path
 
         except Exception as e:
             print(f"Error loading {img_path}: {e}")
@@ -342,6 +351,8 @@ def create_datasets_and_loaders(
         "train_CN_samples": train_dataset.labels.count(0),
         "val_AD_samples": val_dataset.labels.count(1),
         "val_CN_samples": val_dataset.labels.count(0),
+        "test_AD_samples": test_dataset.labels.count(1),
+        "test_CN_samples": test_dataset.labels.count(0),
     }
 
     return (
@@ -374,7 +385,9 @@ class ModelManager:
             "total_params": total_params,
             "trainable_params": trainable_params,
             "frozen_params": frozen_params,
-            "frozen_percentage": frozen_params / total_params,
+            "frozen_percentage": (
+                (frozen_params / total_params) if total_params > 0 else 0
+            ),
         }
 
         return model, model_stats
@@ -454,6 +467,27 @@ class MRIModel(nn.Module):
                 padding=(0, 3, 3),
                 bias=False,
             )
+        # if architecture in ["r3d_18", "mc3_18"]:
+        #     original_first_layer = self.resnet.stem[0]
+        #     self.resnet.stem[0] = nn.Conv3d(
+        #         1,  # Input channels = 1
+        #         original_first_layer.out_channels,  # Keep original output channels
+        #         kernel_size=original_first_layer.kernel_size,
+        #         stride=original_first_layer.stride,
+        #         padding=original_first_layer.padding,
+        #         bias=False,
+        #     )
+        # elif architecture == "r2plus1d_18":
+        #     # R2Plus1D uses a slightly different stem structure
+        #     original_first_conv = self.resnet.stem[0]
+        #     self.resnet.stem[0] = nn.Conv3d(
+        #         1,  # Input channels = 1
+        #         original_first_conv.out_channels,  # Keep original output channels (mid-channels)
+        #         kernel_size=original_first_conv.kernel_size,
+        #         stride=original_first_conv.stride,
+        #         padding=original_first_conv.padding,
+        #         bias=False,
+        #     )
 
         # Replace the final fully connected layer for binary classification
         in_features = self.resnet.fc.in_features
@@ -467,6 +501,19 @@ class MRIModel(nn.Module):
         for name, param in self.resnet.named_parameters():
             if "layer4" not in name and "fc" not in name:
                 param.requires_grad = False
+        # # Freeze everything initially
+        # for param in self.resnet.parameters():
+        #     param.requires_grad = False
+
+        # # Unfreeze layer4 and fc
+        # for param in self.resnet.layer4.parameters():
+        #     param.requires_grad = True
+        # for param in self.resnet.fc.parameters():
+        #     param.requires_grad = True
+
+        # # Also unfreeze the modified first convolutional layer
+        # for param in self.resnet.stem[0].parameters():
+        #     param.requires_grad = True
 
     def count_trainable_params(self):
         """Count and return trainable parameters"""
@@ -537,14 +584,18 @@ class CheckpointManager:
 
         save_path = os.path.join(self.checkpoint_dir, filepath)
         torch.save(checkpoint, save_path)
+        print(f"Checkpoint saved to {save_path}")
 
-        if is_best and metric_type:
+        if is_best and metric_type and wandb.run:
             try:
-                artifact = wandb.Artifact(f"best_model_{metric_type}", type="model")
+                artifact_name = f"{wandb.run.name}-best_model_{metric_type}"  # Use run name for uniqueness
+                artifact = wandb.Artifact(artifact_name, type="model")
                 artifact.add_file(save_path)
-                wandb.log_artifact(artifact)
-                print(f"Model saved (best {metric_type})!")
-            except OSError as e:
+                wandb.log_artifact(
+                    artifact, aliases=[f"best_{metric_type}", f"epoch_{epoch}"]
+                )
+                print(f"Model artifact saved to W&B (best {metric_type})!")
+            except Exception as e:
                 print(f"Failed to log artifact to W&B: {e}")
                 print("Continuing training without W&B artifact logging...")
 
@@ -560,7 +611,8 @@ class CheckpointManager:
         best_val_loss,
     ):
         """Centralized best checkpoint saving with appropriate naming and logging"""
-        updated = False
+        updated_acc = False
+        updated_loss = False
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
@@ -577,24 +629,28 @@ class CheckpointManager:
                 is_best=True,
                 metric_type="acc",
             )
-            updated = True
+            updated_acc = True
 
-        if val_loss < best_val_loss:
+        # Use <= for loss to save even if accuracy didn't improve but loss did
+        if val_loss <= best_val_loss:
             best_val_loss = val_loss
-            self.save(
-                model,
-                optimizer,
-                scheduler,
-                epoch,
-                val_acc,
-                val_loss,
-                best_val_acc,
-                best_val_loss,
-                "best_model_loss.pth",
-                is_best=True,
-                metric_type="loss",
-            )
-            updated = True
+            # Only save if it's truly the best loss or if accuracy also improved
+            # This prevents overwriting best_loss model if only acc improved
+            if val_loss < best_val_loss or updated_acc:
+                self.save(
+                    model,
+                    optimizer,
+                    scheduler,
+                    epoch,
+                    val_acc,
+                    val_loss,
+                    best_val_acc,
+                    best_val_loss,
+                    "best_model_loss.pth",
+                    is_best=True,
+                    metric_type="loss",
+                )
+                updated_loss = True
 
         self.save(
             model,
@@ -608,7 +664,11 @@ class CheckpointManager:
             "checkpoint.pth",
         )
 
-        return updated, best_val_acc, best_val_loss
+        return (
+            updated_acc or updated_loss,
+            best_val_acc,
+            best_val_loss,
+        )
 
     def load(self, model, optimizer=None, scheduler=None, filepath="checkpoint.pth"):
         """
@@ -626,19 +686,51 @@ class CheckpointManager:
         checkpoint = self.get(filepath)
 
         if checkpoint:
-            model.load_state_dict(checkpoint["model_state_dict"])
+            try:
+                model.load_state_dict(checkpoint["model_state_dict"])
+                print(f"Loaded model state dict from {filepath}")
+            except RuntimeError as e:
+                print(f"Error loading model state_dict: {e}")
+                print("Attempting to load with strict=False")
+                model.load_state_dict(checkpoint["model_state_dict"], strict=False)
 
-            if optimizer is not None:
-                optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            if optimizer is not None and "optimizer_state_dict" in checkpoint:
+                try:
+                    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+                    print("Loaded optimizer state dict.")
+                except Exception as e:
+                    print(
+                        f"Could not load optimizer state: {e}. Initializing optimizer from scratch."
+                    )
+            else:
+                print(
+                    "Optimizer state not found in checkpoint or optimizer not provided."
+                )
 
-            if scheduler is not None:
-                scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+            if scheduler is not None and "scheduler_state_dict" in checkpoint:
+                try:
+                    scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+                    print("Loaded scheduler state dict.")
+                except Exception as e:
+                    print(
+                        f"Could not load scheduler state: {e}. Initializing scheduler from scratch."
+                    )
+            else:
+                print(
+                    "Scheduler state not found in checkpoint or scheduler not provided."
+                )
 
-            start_epoch = checkpoint["epoch"] + 1
+            start_epoch = checkpoint.get("epoch", -1) + 1  # Use get with default
             best_val_acc = checkpoint.get("best_val_acc", 0.0)
             best_val_loss = checkpoint.get("best_val_loss", float("inf"))
-            print(f"Loaded checkpoint from epoch {start_epoch}")
+            print(f"Resuming training from epoch {start_epoch}")
+            print(
+                f"Previous best val_acc: {best_val_acc:.4f}, best val_loss: {best_val_loss:.4f}"
+            )
         else:
+            print(
+                f"No checkpoint found at {os.path.join(self.checkpoint_dir, filepath)}. Starting training from scratch."
+            )
             start_epoch = 0
             best_val_acc = 0.0
             best_val_loss = float("inf")
@@ -650,7 +742,7 @@ class CheckpointManager:
         Get checkpoint data without loading it into a model.
 
         Args:
-            filepath: Path to the checkpoint file
+            filepath: Path to the checkpoint file relative to checkpoint_dir
 
         Returns:
             dict: The checkpoint dictionary or None if file doesn't exist
@@ -658,8 +750,12 @@ class CheckpointManager:
         checkpoint_path = os.path.join(self.checkpoint_dir, filepath)
 
         if os.path.exists(checkpoint_path):
-            checkpoint = torch.load(checkpoint_path)
-            return checkpoint
+            try:
+                checkpoint = torch.load(checkpoint_path)
+                return checkpoint
+            except Exception as e:
+                print(f"Error loading checkpoint file {checkpoint_path}: {e}")
+                return None
         else:
             print(f"Warning: Checkpoint file not found at {checkpoint_path}")
             return None
@@ -718,11 +814,11 @@ class TrainerEngine:
         running_loss = torch.tensor(0.0, device=device)
         running_corrects = torch.tensor(0.0, device=device)
 
-        for inputs, labels in tqdm(dataloader, desc=f"Training Epoch {epoch+1}"):
+        for inputs, labels, _ in tqdm(dataloader, desc=f"Training Epoch {epoch+1}"):
             inputs = inputs.to(device)
             labels = labels.to(device)
 
-            self.optimizer.zero_grad(set_to_none=True)
+            self.optimizer.zero_grad(set_to_none=True)  # More memory efficient
 
             # Forward pass
             outputs = self.model(inputs)
@@ -739,13 +835,15 @@ class TrainerEngine:
         epoch_loss = (running_loss / len(dataloader.dataset)).item()
         epoch_acc = (100 * running_corrects / len(dataloader.dataset)).item()
 
-        wandb.log(
-            {
-                "train_loss": epoch_loss,
-                "train_acc": epoch_acc,
-                "epoch": epoch,
-            }
-        )
+        if wandb.run:
+            wandb.log(
+                {
+                    "train_loss": epoch_loss,
+                    "train_acc": epoch_acc,
+                    "epoch": epoch,
+                    "learning_rate": self.optimizer.param_groups[0]["lr"],
+                }
+            )
 
         if device == "mps":
             empty_cache()
@@ -777,10 +875,11 @@ class TrainerEngine:
 
         for epoch in range(start_epoch, num_epochs):
             print(f"\nEpoch {epoch+1}/{num_epochs}")
+            print("-" * 10)
 
             train_loss, train_acc = self.train_one_epoch(train_loader, epoch)
 
-            val_loss, val_acc = self.evaluate(val_loader, epoch)
+            val_loss, val_acc = self.evaluate(val_loader, epoch, prefix="val")
 
             self.scheduler.step()
             current_lr = self.scheduler.get_last_lr()[0]
@@ -812,8 +911,14 @@ class TrainerEngine:
                 print("Model improved! Early stopping counter reset.")
 
             if early_stopping_counter >= patience:
-                print(f"Early stopping after {epoch+1} epochs without improvement.")
+                print(
+                    f"Early stopping after {epoch+1} epochs ({early_stopping_counter} epochs without improvement)."
+                )
                 break
+
+        print("\nTraining finished.")
+        print(f"Best Validation Accuracy: {self.best_val_acc:.2f}%")
+        print(f"Best Validation Loss: {self.best_val_loss:.4f}")
 
         return epoch + 1, self.best_val_acc, self.best_val_loss
 
@@ -828,10 +933,14 @@ class TrainerEngine:
             checkpoint_path: Optional path to load model checkpoint before evaluation
 
         Returns:
-            Tuple of (evaluation loss, evaluation accuracy)
+            Tuple of (evaluation loss, evaluation accuracy in percentage)
         """
         if prefix is None:
-            prefix = dataloader.dataset.split
+            # Infer prefix from dataset split if possible
+            try:
+                prefix = dataloader.dataset.split
+            except AttributeError:
+                prefix = "eval"  # Default if split attribute doesn't exist
 
         if checkpoint_path:
             checkpoint = self.checkpoint_manager.get(checkpoint_path)
@@ -853,12 +962,12 @@ class TrainerEngine:
         desc = (
             f"{prefix.capitalize()} Epoch {epoch+1}"
             if epoch is not None
-            else f"{prefix.capitalize()}"
+            else f"{prefix.capitalize()} Evaluation"
         )
 
-        # Collect predictions
+        # Collect predictions without computing gradients
         with torch.no_grad():
-            for inputs, labels in tqdm(dataloader, desc=desc):
+            for inputs, labels, _ in tqdm(dataloader, desc=desc):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
@@ -866,26 +975,144 @@ class TrainerEngine:
                 loss = self.criterion(outputs, labels)
                 running_loss += loss.item() * inputs.size(0)
 
-                probs = torch.nn.functional.softmax(outputs, dim=1)
+                # Get probabilities for the positive class (AD)
+                probs = torch.nn.functional.softmax(outputs, dim=1)[:, 1]
                 _, predicted = torch.max(outputs.data, 1)
 
                 all_labels.extend(labels.cpu().numpy())
                 all_preds.extend(predicted.cpu().numpy())
-                all_probs.extend(probs[:, 1].cpu().numpy())
+                all_probs.extend(probs.cpu().numpy())
 
         all_labels = np.array(all_labels)
         all_preds = np.array(all_preds)
         all_probs = np.array(all_probs)
 
-        loss = running_loss / len(dataloader.dataset)
-        metrics = MetricsManager.compute_metrics(all_labels, all_preds, all_probs)
-        MetricsManager.log_metrics(
-            all_labels, all_preds, all_probs, loss, epoch, prefix
-        )
-
-        acc = metrics["accuracy"] * 100  # Convert to percentage
+        if len(all_labels) > 0:
+            loss = running_loss / len(dataloader.dataset)
+            metrics = MetricsManager.compute_metrics(all_labels, all_preds, all_probs)
+            if wandb.run:
+                MetricsManager.log_metrics(
+                    all_labels, all_preds, all_probs, loss, epoch, prefix
+                )
+            acc = metrics["accuracy"] * 100  # Convert to percentage
+        else:
+            print(f"Warning: No samples processed during {prefix} evaluation.")
+            loss = 0.0
+            acc = 0.0
 
         return loss, acc
+
+
+# --- Grad-CAM Visualization Function ---
+def visualize_grad_cam(model, dataloader, checkpoint_manager, config, num_images=5):
+    """
+    Generates Grad-CAM visualizations for a few images using the best model.
+
+    Args:
+        model: The MRIModel instance.
+        dataloader: DataLoader (e.g., test_loader) to get images from.
+        checkpoint_manager: CheckpointManager instance to load the best model.
+        config: Configuration object containing output dir, device, etc.
+        num_images: Number of images to generate visualizations for.
+    """
+    print("\nGenerating Grad-CAM visualizations...")
+
+    best_acc_checkpoint = checkpoint_manager.get("best_model_acc.pth")
+    if not best_acc_checkpoint:
+        print("Could not find best_model_acc.pth. Skipping CAM visualization.")
+        return
+    try:
+        model.load_state_dict(best_acc_checkpoint["model_state_dict"])
+        print("Loaded best accuracy model for CAM visualization.")
+    except Exception as e:
+        print(f"Error loading best model state_dict for CAM: {e}")
+        print("Attempting to load with strict=False")
+        try:
+            model.load_state_dict(best_acc_checkpoint["model_state_dict"], strict=False)
+        except Exception as e_strict:
+            print(
+                f"Failed to load model even with strict=False: {e_strict}. Skipping CAM."
+            )
+            return
+
+    model.eval()
+
+    # Define the target layer (last convolutional block of the ResNet backbone)
+    target_layers = [model.resnet.layer4[-1]]
+
+    print("Initializing GradCAM...")
+    try:
+        cam = GradCAM(model=model, target_layers=target_layers)
+    except Exception as e:
+        print(f"Error initializing GradCAM: {e}")
+        return
+    # --- End change ---
+
+    cam_output_dir = config.cam_output_dir
+    os.makedirs(cam_output_dir, exist_ok=True)
+
+    images_processed = 0
+    for inputs, labels, img_paths in dataloader:
+        inputs = inputs.to(config.device)
+        labels = labels.to(config.device)
+
+        for i in range(inputs.size(0)):
+            if images_processed >= num_images:
+                break
+
+            input_tensor = inputs[i : i + 1]  # Keep batch dimension
+            label = labels[i].item()
+            img_path = img_paths[i]
+            base_filename = os.path.basename(img_path).replace(".nii.gz", "")
+
+            # Define targets for CAM
+            targets = [ClassifierOutputTarget(label)]
+
+            try:
+                grayscale_cam = cam(input_tensor=input_tensor, targets=targets)
+            except Exception as e:
+                print(f"Error generating CAM for {img_path}: {e}")
+                continue
+
+            # grayscale_cam shape is [B, D, H, W]. Remove batch dim.
+            if grayscale_cam is None or grayscale_cam.ndim == 0:
+                print(
+                    f"Warning: CAM generation resulted in None or scalar for {img_path}"
+                )
+                continue
+            grayscale_cam = grayscale_cam[0, :]  # Now shape [D, H, W]
+
+            # --- Visualization for 3D Data ---
+            mid_slice_idx = grayscale_cam.shape[0] // 2
+            cam_slice = grayscale_cam[mid_slice_idx, :, :]  # Shape [H, W]
+
+            img_slice_tensor = input_tensor[0, 0, mid_slice_idx, :, :].cpu().numpy()
+
+            img_slice_normalized = cv2.normalize(
+                img_slice_tensor, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
+            )
+            img_slice_bgr = cv2.cvtColor(img_slice_normalized, cv2.COLOR_GRAY2BGR)
+
+            try:
+                visualization = show_cam_on_image(
+                    img_slice_bgr / 255.0, cam_slice, use_rgb=False
+                )
+            except Exception as e:
+                print(f"Error during show_cam_on_image for {img_path}: {e}")
+                continue
+
+            output_filename = (
+                f"{base_filename}_label{label}_slice{mid_slice_idx}_gradcam.png"
+            )
+            output_path = os.path.join(cam_output_dir, output_filename)
+            cv2.imwrite(output_path, visualization)
+
+            images_processed += 1
+
+        if images_processed >= num_images:
+            break
+
+    print(f"Finished generating {images_processed} Grad-CAM visualizations.")
 
 
 def main(data_path):
@@ -902,6 +1129,7 @@ def main(data_path):
         resume="must" if wandb_run_id else None,  # Resume if ID exists
     )
     config.update(**wandb.config)
+    wandb.config.update(config.to_dict())
 
     train_dataset, train_loader, val_loader, test_loader, dataset_stats = (
         create_datasets_and_loaders(
@@ -913,9 +1141,11 @@ def main(data_path):
     )
 
     config.update(**dataset_stats)
+    wandb.config.update(dataset_stats)
 
     model, model_stats = ModelManager.create_model(config)
 
+    print(f"Model Architecture: {config.architecture}")
     print(f"Total parameters: {model_stats['total_params']:,}")
     print(
         f"Trainable parameters: {model_stats['trainable_params']:,} "
@@ -927,6 +1157,7 @@ def main(data_path):
     )
 
     config.update(**model_stats)
+    wandb.config.update(model_stats)
 
     wandb.watch(model, log="all", log_freq=10)
 
@@ -942,7 +1173,9 @@ def main(data_path):
     trainer.best_val_acc = best_val_acc
     trainer.best_val_loss = best_val_loss
 
-    epochs_trained, best_val_acc, best_val_loss = trainer.train(
+    # --- Training ---
+    print("\nStarting Training...")
+    epochs_trained, final_best_val_acc, final_best_val_loss = trainer.train(
         train_loader,
         val_loader,
         config.epochs,
@@ -950,16 +1183,21 @@ def main(data_path):
         config.patience,
     )
 
+    # --- Testing ---
+    print("\nStarting Testing using best accuracy model...")
     trainer.evaluate(
         test_loader,
-        epoch=config.epochs,
+        epoch=None,  # No specific epoch needed for final test
         prefix="test",
-        checkpoint_path="best_model_acc.pth",
+        checkpoint_path="best_model_acc.pth",  # Evaluate the best model based on validation accuracy
     )
 
-    wandb.run.summary["best_val_acc"] = best_val_acc
-    wandb.run.summary["best_val_loss"] = best_val_loss
+    wandb.run.summary["best_val_acc"] = final_best_val_acc
+    wandb.run.summary["best_val_loss"] = final_best_val_loss
     wandb.run.summary["total_epochs"] = epochs_trained
+
+    # --- Grad-CAM Visualization ---
+    visualize_grad_cam(model, test_loader, checkpoint_manager, config, num_images=10)
 
     wandb.finish()
 
@@ -976,9 +1214,15 @@ if __name__ == "__main__":
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    # Ensure checkpoint directory exists
     if not os.path.exists("checkpoints"):
         os.makedirs("checkpoints")
+    if not os.path.exists("cam_visualizations"):
+        os.makedirs("cam_visualizations")
 
-    data_path = "./data/adni-cv-splits/fold_0"
+    data_path = "./data/adni-cv-splits/fold_2"
+    if not os.path.isdir(data_path):
+        print(f"Error: Data path not found at {data_path}")
+        print("Please ensure the data path is correct relative to the script location.")
+        exit()
+
     main(data_path)
