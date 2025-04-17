@@ -561,10 +561,7 @@ The evaluation framework employed strict subject-level isolation to prevent data
 Statistical rigor was ensured through comprehensive uncertainty quantification and comparative analysis. Bootstrap confidence intervals were calculated for key performance metrics, providing a robust quantification of the uncertainty in the model's performance estimates. Confusion matrix analysis was performed to identify classification patterns and error types, revealing balanced false positive and false negative distributions. Additionally, the model's performance was contextualized through comparison to multiple baselines, including random chance (50\%), published clinical radiologist performance, and results from existing algorithmic approaches in the literature. These comparative analyses provided important reference points for evaluating the clinical utility and relative advantages of the proposed approach within the broader landscape of AD detection methodologies.
 
 
-Despite computational constraints with training runs requiring approximately 20 hours on an M1 Mac, model robustness was thoroughly verified through several complementary approaches. Subject-level 3-fold cross-validation was implemented with strict diagnostic balance and complete subject-level isolation maintained across all partitions to ensure reliable performance assessment. Additionally, a systematic architecture comparison across R3D-18, MC3-18, and R2Plus1D-18 models was conducted to assess the impact of dimensional processing on performance and validate the choice of fully 3D convolutional architectures. This comprehensive validation strategy ensured confidence in the model's generalization capabilities despite the computational limitations of the development environment.
-
-% Todo include with xai
-% architectures. To supplement these quantitative evaluations, various visualization techniques were employed to provide qualitative insights into model behavior, offering deeper understanding beyond numerical metrics alone. This
+Despite computational constraints with training runs requiring approximately 20 hours on an M1 Mac, model robustness was thoroughly verified through several complementary approaches. Subject-level 3-fold cross-validation was implemented with strict diagnostic balance and complete subject-level isolation maintained across all partitions to ensure reliable performance assessment. Additionally, a systematic architecture comparison across R3D-18, MC3-18, and R2Plus1D-18 models was conducted to assess the impact of dimensional processing on performance and validate the choice of fully 3D convolutional architectures. To supplement these quantitative evaluations, visualization techniques were employed to provide qualitative insights into model behavior, offering deeper understanding beyond numerical metrics alone. This comprehensive validation strategy ensured confidence in the model's generalization capabilities despite the computational limitations of the development environment.
 
 \section{Results}
 \label{sec:results}
@@ -674,25 +671,11 @@ The fully 3D convolutional approach (R3D-18) consistently outperformed both the 
 
 \subsubsection{Layer Freezing Strategy Analysis}
 
-Experiments with different layer freezing strategies revealed significant impact on model stability and performance. Table \ref{tab:freezing_strategies} summarizes these findings.
-
-\begin{table}[htbp]
-\centering
-\begin{tabular}{|l|c|c|p{4cm}|}
-\hline
-\textbf{Strategy} & \textbf{Trainable Parameters} & \textbf{Result} & \textbf{Observation} \\
-\hline
-FC layer only & 0.003\% (1,026) & Failed training & Numerical instability (NaN losses) \\
-\hline
-FC + Layer 4 & 75.15\% (24.9M) & Successful & Best balance of stability and performance \\
-\hline
-Full fine-tuning & 100\% (33.1M) & Successful & Increased overfitting risk, slower convergence \\
-\hline
-\end{tabular}
-\caption{Comparison of different layer freezing strategies and their impact on training stability and performance.}
-\label{tab:freezing_strategies}
-\end{table}
-% todo check this cuz it wasn't actually tested from scratch
+Experiments with different layer freezing strategies revealed significant impact on model stability and performance:
+\begin{itemize}
+    \item \textbf{FC layer only:} Training only the final fully connected layer (0.003\% trainable parameters, 1,026) resulted in numerical instability (NaN losses) and failed training.
+    \item \textbf{FC + Layer 4:} Fine-tuning the final fully connected layer and the last residual block (Layer 4) (75.15\% trainable parameters, 24.9M) led to successful training and represented the best balance of stability and performance.
+\end{itemize}
 
 Notably, attempting to train only the final fully connected layer (preserving 99.997\% of pre-trained weights) resulted in numerical instability, suggesting that significant domain adaptation is necessary for the substantial shift from video action recognition to MRI classification. The optimal approach (FC + Layer 4) balanced stable training with effective knowledge transfer.
 
@@ -787,7 +770,15 @@ The methodological investigation into group leakage (subject-level vs. scan-leve
 This 20-percentage-point difference highlights the critical importance of proper validation methodology in neuroimaging studies and suggests that previously published results may be significantly overestimated if they employed scan-level partitioning.
 
 \subsection{Explicable AI}
-% TODO Visualization of model attention/activation maps XAI
+
+To provide qualitative insights into the model's decision-making process, Gradient-weighted Class Activation Mapping (Grad-CAM) visualizations were generated. Figure \ref{fig:gradcam} displays these saliency maps for representative subjects from the test set, illustrating the brain regions that most influenced the R3D-18 model's predictions across different sagittal slices. The figure contrasts activation patterns for correctly classified Alzheimer's Disease (AD) and Cognitively Normal (CN) subjects, as well as examples of misclassified cases (AD Incorrect, CN Incorrect). Red and yellow areas indicate regions with higher model attention.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figures/gradcam.png}
+  \caption{Grad-CAM visualizations illustrating regions influencing the R3D-18 model's predictions for representative correctly and incorrectly classified AD and CN subjects across different sagittal slices. Red/yellow areas indicate higher model attention.}
+  \label{fig:gradcam}
+\end{figure}
 
 \section{Discussion}
 \label{sec:discussion}
@@ -862,13 +853,20 @@ Despite these optimizations, the total training time of approximately 20 hours p
 
 These technical insights suggest several directions for future research: development of memory-efficient 3D architectures specifically designed for volumetric medical imaging; exploration of progressive resolution techniques enabling higher effective resolution while maintaining manageable memory footprints; and implementation of model quantization and pruning to enable deployment of more powerful architectures on consumer hardware.
 
-% TODO
-% \subsection{Model Interpretability}
-% Things to consider:
-%   - Insights from XAI analysis
-%   - Visualization techniques for model attention/activation
-%   - Correlation with known AD-affected regions
-%   - Clinical relevance of identified features
+\subsection{Model Interpretability}
+
+Understanding *how* a deep learning model arrives at its classification is crucial for clinical trust and adoption, moving beyond simple accuracy metrics. To gain insights into the decision-making process of the R3D-18 model, Gradient-weighted Class Activation Mapping (Grad-CAM) was employed. Grad-CAM produces saliency maps highlighting the input regions most influential in determining the model's output for a specific class~\cite{selvaraju2017grad}. Figure \ref{fig:gradcam} presents these visualizations for representative AD and CN subjects from the test set, showcasing activation patterns across different sagittal slices for both correct and incorrect classifications.
+
+Analysis of the Grad-CAM maps for correctly classified AD subjects (Row 1: "Ad Correct") reveals relatively consistent patterns of high activation (indicated by red/yellow areas) primarily localized in regions known to be affected early and significantly by Alzheimer's disease. Across different subjects and slices, the model frequently focuses on the temporal lobes, including the hippocampus and surrounding structures, as well as areas around the ventricles, which often enlarge due to brain atrophy. For instance, Subject 1 shows strong, widespread activation across the temporal and parietal regions, particularly evident in slices 65 and 75. Subject 3 shows similar, though perhaps more focal, activation in the temporal lobe and near the ventricles. This alignment between model attention and known AD pathology suggests the model has learned to identify relevant structural biomarkers.
+
+Conversely, for correctly classified CN subjects (Row 2: "Cn Correct"), the activation patterns are generally more diffuse and less intense. While some areas show moderate activation, there isn't the same consistent focus on specific neuroanatomical regions associated with AD pathology. The model appears to rely on a broader assessment or the absence of strong AD-like features, rather than identifying specific "healthy" markers. This is expected, as the task is framed around detecting the presence of AD patterns.
+
+Examining the misclassified cases provides further insight. For AD subjects incorrectly classified as CN (Row 3: "Ad Incorrect" - False Negatives), the Grad-CAM maps often show weaker or misdirected activation. For example, Subject 1 (Incorrect AD) shows some activation, but it's less intense and widespread compared to the correctly classified AD cases. Subjects 2 and 3 (Incorrect AD) exhibit focal activation primarily concentrated deep within the brain, potentially near the brainstem or thalamus, rather than the typical cortical or hippocampal regions. This suggests the model may fail when AD pathology presents atypically or when the characteristic structural changes are less pronounced in the specific slices examined.
+
+For CN subjects incorrectly classified as AD (Row 4: "Cn Incorrect" - False Positives), the model sometimes highlights regions that might exhibit age-related changes confusable with early AD. Subject 3 (Incorrect CN), slice 75, shows activation in the temporal lobe area, potentially indicating that normal anatomical variations or age-related atrophy in this individual were misinterpreted by the model as pathological. Subject 2 shows some diffuse posterior activation. Often, however, the activation patterns in false positive cases appear less distinct or anatomically specific than in true positive AD cases, suggesting the model might be latching onto less reliable or more ambiguous features.
+
+Overall, the Grad-CAM visualizations indicate that the R3D-18 model, despite being trained via transfer learning from a non-medical domain, has learned to associate specific brain regions, particularly the temporal lobes and periventricular areas, with an AD diagnosis. The consistency of activation in these regions for correct AD classifications lends credibility to the model's approach. However, the variability in activation patterns, especially in misclassified cases, highlights the challenges in distinguishing subtle AD patterns from normal aging or atypical presentations. While Grad-CAM provides valuable qualitative insights, it is a relatively low-resolution technique and doesn't fully elucidate the complex interplay of features the model uses. Future work could employ more advanced XAI methods to gain a deeper, more quantitative understanding of the model's learned representations and decision boundaries.
+
 
 \subsubsection{Data Leakage Prevention}
 
@@ -951,7 +949,7 @@ Perhaps the most critical methodological contribution of this dissertation is th
 
 Despite the promising results, this study is subject to several limitations that pave the way for future research. The reliance on the ADNI dataset, while providing high-quality standardized data, introduces potential demographic and clinical biases and may not fully represent the heterogeneity encountered in real-world clinical practice. The binary classification task (AD vs. CN) simplifies the complex spectrum of cognitive decline, omitting the crucial Mild Cognitive Impairment (MCI) stage, which is a key target for early intervention. Future work should focus on multi-class classification (CN vs. MCI vs. AD) and differential diagnosis against other dementia types. The performance achieved, while significant, indicates room for improvement, potentially through exploring more advanced architectures, integrating complementary data modalities, or refining transfer learning strategies.
 
-Technical limitations, primarily imposed by computational resources (consumer-grade M1 Mac), restricted the exploration of larger models (like deeper ResNets or Vision Transformers) and higher input resolutions. Future investigations with access to greater computational power could explore these avenues, potentially unlocking higher performance. The inherent domain gap between video action recognition and static MRI analysis, while shown to be bridgeable, may still impose a ceiling on transfer learning effectiveness; exploring self-supervised pre-training directly on large medical imaging datasets could offer a complementary or superior approach. Furthermore, the interpretability of the model remains limited, necessitating future work on incorporating advanced Explainable AI (XAI) techniques to elucidate the model's decision-making process and build clinical trust.
+Technical limitations, primarily imposed by computational resources (consumer-grade M1 Mac), restricted the exploration of larger models (like deeper ResNets or Vision Transformers) and higher input resolutions. Future investigations with access to greater computational power could explore these avenues, potentially unlocking higher performance. The inherent domain gap between video action recognition and static MRI analysis, while shown to be bridgeable, may still impose a ceiling on transfer learning effectiveness; exploring self-supervised pre-training directly on large medical imaging datasets could offer a complementary or superior approach. Furthermore, the interpretability of the model remains limited, necessitating future work on incorporating even more advanced Explainable AI (XAI) techniques to elucidate the model's decision-making process, to highlight the most crucial diagnostic features, and build clinical trust.
 
 \subsection{Future Directions}
 
@@ -975,7 +973,6 @@ In conclusion, this dissertation provides compelling evidence for the potential 
 %   - Extended results tables
 %   - Additional performance metrics
 %   - Sample preprocessing visualizations
-%   - Extended XAI visualizations
 
 % - **Computational Resources Analysis**
 %   - Detailed training times
